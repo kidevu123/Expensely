@@ -179,9 +179,6 @@ export default function Upload(){
   const allowDaily = Boolean((currentUser as any).allow_daily_expenses);
   const isPrivileged = (currentUser.role==='admin' || currentUser.role==='accountant' || currentUser.role==='coordinator');
   const selectedShow = shows.find((s:any)=>s.id===showId);
-  if(selectedShow?.closed){
-    return <main className="p-6 max-w-3xl mx-auto"><p className="text-slate-700">Submissions are closed for {selectedShow.name}. Please contact the accountant to reopen.</p></main>;
-  }
   if(!isPrivileged && !allowDaily && !hasAnyShow){
     return <main className="p-6 max-w-3xl mx-auto"><p className="text-slate-700">You are not assigned to a trade show yet. Please contact your coordinator.</p></main>;
   }
@@ -197,7 +194,7 @@ export default function Upload(){
           </select>
           {mode==='show' && (
             <select className="select" value={showId} onChange={e=>setShowId(e.target.value)} disabled={!hasAnyShow}>
-              {shows.filter((s:any)=>!s.closed).map((s:any)=> <option key={s.id} value={s.id}>{s.name}</option>)}
+              {shows.map((s:any)=> <option key={s.id} value={s.id} disabled={!!s.closed}>{s.name}{s.closed?' (closed)':''}</option>)}
             </select>
           )}
         </div>

@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }){
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-white/70 text-xs">v{version}</span>
+            <span className="text-white/70 text-xs">{version}</span>
             <FeedbackButton/>
             <UserNav/>
           </div>
