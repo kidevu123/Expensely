@@ -25,9 +25,9 @@ export default function Home(){
   return (
     <main className="p-6 max-w-6xl mx-auto">
       <div className="profile-card mb-6">
-        <img className="avatar-lg" src={(u as any)?.avatar_url||`https://www.gravatar.com/avatar/${btoa(u.email)}?d=identicon`} alt="avatar" />
+        <img className="avatar-lg" src={(u as any)?.avatar_url||`https://www.gravatar.com/avatar/${btoa(String(u.email||u.username||u.id||'user'))}?d=identicon`} alt="avatar" />
         <div>
-          <div className="text-2xl font-semibold">Welcome, {u.name||u.email}</div>
+          <div className="text-2xl font-semibold">Welcome, {u.name||u.username||u.email}</div>
           <div className="text-slate-600">Role: {u.role}</div>
         </div>
       </div>

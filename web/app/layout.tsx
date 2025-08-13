@@ -6,6 +6,7 @@ export const metadata = { title: 'Expensely' };
 export default function RootLayout({ children }: { children: React.ReactNode }){
   const rawVersion = process.env.NEXT_PUBLIC_APP_VERSION || 'dev';
   const version = rawVersion.startsWith('v')? rawVersion: `v${rawVersion}`;
+  const sha = (process.env.NEXT_PUBLIC_GIT_SHA||'').slice(0,7);
   return (
     <html lang="en"><body>
       <header className="brand-header shadow sticky top-0 z-10">
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }){
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-white/70 text-xs">{version}</span>
+            <span className="text-white/70 text-xs">{version}{sha? ` · ${sha}`:''}</span>
             <FeedbackButton/>
             <UserNav/>
           </div>

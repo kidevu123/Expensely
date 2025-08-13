@@ -10,9 +10,13 @@ export default function Login(){
   const [busy, setBusy] = useState(false);
 
   async function submit(e:any){ e.preventDefault(); setBusy(true);
-    const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email||undefined, username: username||undefined, password }) });
-    const j = await r.json(); setBusy(false);
-    if(r.ok){ setUser(j.user as User); window.location.href = '/'; } else { alert(j.error||'Login failed'); }
+    try{
+      const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email||undefined, username: username||undefined, password }) });
+      const j = await r.json().catch(()=>({ error:'Network error' })); setBusy(false);
+      if(r.ok){ setUser(j.user as User); window.location.href = '/'; } else { alert(j.error||'Login failed'); }
+    } catch {
+      setBusy(false); alert('Network error. Please check connectivity.');
+    }
   }
 
   return (
