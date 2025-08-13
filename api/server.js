@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 const { Pool } = pkg;
 import fs from 'fs';
 import path from 'path';
+import { execFile } from 'child_process';
 
 const app = express();
 app.use(cors());
@@ -78,6 +79,105 @@ function bootstrapAdmin(){
   }
 }
 bootstrapAdmin();
+
+// ================= Zoho WorkDrive integration =================
+const ZOHO = {
+  dc: (process.env.ZWD_DC || 'us').toLowerCase(), // us, eu, in, au
+  clientId: process.env.ZWD_CLIENT_ID || '',
+  clientSecret: process.env.ZWD_CLIENT_SECRET || '',
+  refreshToken: process.env.ZWD_REFRESH_TOKEN || '',
+  teamId: process.env.ZWD_TEAM_ID || '',
+  receiptsFolderId: process.env.ZWD_FOLDER_ID || '',
+  backupsFolderId: process.env.ZWD_BACKUP_FOLDER_ID || '',
+};
+
+function zohoDomains(dc){
+  const accounts = { us:'https://accounts.zoho.com', eu:'https://accounts.zoho.eu', in:'https://accounts.zoho.in', au:'https://accounts.zoho.com.au' }[dc] || 'https://accounts.zoho.com';
+  const workdrive = { us:'https://workdrive.zoho.com', eu:'https://workdrive.zoho.eu', in:'https://workdrive.zoho.in', au:'https://workdrive.zoho.com.au' }[dc] || 'https://workdrive.zoho.com';
+  return { accounts, workdrive };
+}
+
+let _zAuth = { token:'', expiry: 0 };
+async function getZohoAccessToken(){
+  const now = Date.now();
+  if (_zAuth.token && now < _zAuth.expiry - 60000) return _zAuth.token;
+  const { accounts } = zohoDomains(ZOHO.dc);
+  const params = new URLSearchParams({
+    grant_type: 'refresh_token',
+    client_id: ZOHO.clientId,
+    client_secret: ZOHO.clientSecret,
+    refresh_token: ZOHO.refreshToken,
+  });
+  const r = await fetch(`${accounts}/oauth/v2/token?${params.toString()}`, { method:'POST' });
+  if(!r.ok) throw new Error('Zoho token exchange failed');
+  const j = await r.json();
+  _zAuth = { token: j.access_token, expiry: Date.now() + (j.expires_in||3600)*1000 };
+  return _zAuth.token;
+}
+
+async function ensureTeamAndFolders(){
+  const at = await getZohoAccessToken();
+  const { workdrive } = zohoDomains(ZOHO.dc);
+  // Team
+  if (!ZOHO.teamId){
+    const t = await fetch(`${workdrive}/api/v1/teams`, { headers:{ Authorization:`Zoho-oauthtoken ${at}` } });
+    const tj = await t.json();
+    ZOHO.teamId = tj?.data?.[0]?.id || '';
+    if(!ZOHO.teamId) throw new Error('Zoho team not found');
+  }
+  // Workspace root
+  const ws = await fetch(`${workdrive}/api/v1/teams/${ZOHO.teamId}/workspaces`, { headers:{ Authorization:`Zoho-oauthtoken ${at}` } });
+  const wj = await ws.json();
+  const root = wj?.data?.[0]?.root_id;
+  if(!root) throw new Error('Zoho workspace root not found');
+
+  async function ensureFolder(parentId, name, existing){
+    if (existing) return existing;
+    const r = await fetch(`${workdrive}/api/v1/files`, {
+      method:'POST', headers:{ Authorization:`Zoho-oauthtoken ${at}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ name, parent_id: parentId, type:'folder' })
+    });
+    const jr = await r.json();
+    return jr?.data?.id || '';
+  }
+
+  ZOHO.receiptsFolderId = await ensureFolder(root, 'Expensely_Receipts', ZOHO.receiptsFolderId);
+  ZOHO.backupsFolderId  = await ensureFolder(root, 'Expensely_Backups',  ZOHO.backupsFolderId);
+  return { receiptsFolderId: ZOHO.receiptsFolderId, backupsFolderId: ZOHO.backupsFolderId };
+}
+
+function makeMultipart({buffer, filename, contentType}){
+  const boundary = '----expensely' + Math.random().toString(16).slice(2);
+  const head = Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="content"; filename="${filename}"\r\nContent-Type: ${contentType||'application/octet-stream'}\r\n\r\n`);
+  const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
+  const body = Buffer.concat([head, buffer, tail]);
+  const headers = { 'Content-Type': `multipart/form-data; boundary=${boundary}` };
+  return { body, headers };
+}
+
+async function uploadToWorkDrive({ buffer, filename, contentType, parentId }){
+  const at = await getZohoAccessToken();
+  const { workdrive } = zohoDomains(ZOHO.dc);
+  const { body, headers } = makeMultipart({ buffer, filename, contentType });
+  const r = await fetch(`${workdrive}/api/v1/upload?parent_id=${encodeURIComponent(parentId)}`, {
+    method:'POST', headers:{ Authorization:`Zoho-oauthtoken ${at}`, ...headers }, body
+  });
+  const j = await r.json();
+  const fileId = j?.data?.files?.[0]?.id;
+  if(!fileId) throw new Error('WorkDrive upload failed');
+  return fileId;
+}
+
+async function createPublicLink(fileId){
+  const at = await getZohoAccessToken();
+  const { workdrive } = zohoDomains(ZOHO.dc);
+  const r = await fetch(`${workdrive}/api/v1/links`, {
+    method:'POST', headers:{ Authorization:`Zoho-oauthtoken ${at}`, 'Content-Type':'application/json' },
+    body: JSON.stringify({ resource_id:fileId, type:'public', access_level:'view' })
+  });
+  const j = await r.json();
+  return j?.data?.link?.web_url || '';
+}
 
 // Auth stubs
 app.post('/api/auth/login', (req, res) => {
@@ -329,17 +429,24 @@ app.post('/api/flight/lookup', async (req,res)=>{
 });
 
 // Files (simple in-memory store)
-app.post('/api/files', (req,res)=>{
-  const { data, content_type } = req.body||{};
-  if(!data) return res.status(400).json({ error:'data required (base64)' });
-  const id = `f-${Date.now()}`;
-  const b64 = String(data);
-  const cleaned = b64.replace(/^data:[^,]+,/, '');
-  const buf = Buffer.from(cleaned, 'base64');
-  const ext = (content_type||'').includes('png')? '.png' : (content_type||'').includes('pdf')? '.pdf' : '.jpg';
-  const filePath = path.join(DATA_DIR, id + ext);
-  fs.writeFileSync(filePath, buf);
-  res.json({ id: id+ext, url: `/files/${id+ext}` });
+app.post('/api/files', async (req,res)=>{
+  try{
+    const { data, content_type } = req.body||{};
+    if(!data) return res.status(400).json({ error:'data required (base64)' });
+    const cleaned = String(data).replace(/^data:[^,]+,/, '');
+    const buf = Buffer.from(cleaned, 'base64');
+    const ext = (content_type||'').includes('png')? '.png' : (content_type||'').includes('pdf')? '.pdf' : '.jpg';
+    const filename = `receipt-${Date.now()}${ext}`;
+
+    // Upload to Zoho WorkDrive
+    const { receiptsFolderId } = await ensureTeamAndFolders();
+    const fileId = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
+    const url = await createPublicLink(fileId);
+    res.json({ id: fileId, url });
+  } catch (e){
+    console.error('WorkDrive upload error', e);
+    res.status(500).json({ error:'upload failed' });
+  }
 });
 
 // Show costs
@@ -476,6 +583,38 @@ app.post('/api/cardmap', (req,res)=>{
 app.get('/api/admin/audit', (req,res)=>{
   const limit = parseInt(String(req.query.limit||'200')); res.json(memory.audit.slice(-limit).reverse());
 });
+
+// ====== Daily JSON backup to Zoho WorkDrive ======
+const BACKUP_INTERVAL_HOURS = parseInt(process.env.BACKUP_INTERVAL_HOURS || '24', 10);
+function makeTarGz(srcDir, outPath){
+  return new Promise((resolve, reject)=>{
+    execFile('tar', ['-czf', outPath, '-C', srcDir, '.'], (err)=> err? reject(err): resolve());
+  });
+}
+async function uploadBackupNow(){
+  try{
+    const { backupsFolderId } = await ensureTeamAndFolders();
+    const tmp = `/tmp/expensely-backup-${Date.now()}.tar.gz`;
+    await makeTarGz(DATA_DIR, tmp);
+    const buf = fs.readFileSync(tmp);
+    const fileId = await uploadToWorkDrive({ buffer: buf, filename: `backup-${new Date().toISOString().replace(/[:.]/g,'-')}.tar.gz`, contentType: 'application/gzip', parentId: backupsFolderId });
+    const url = await createPublicLink(fileId);
+    try{ fs.unlinkSync(tmp); }catch{}
+    return { ok:true, file_id:fileId, url };
+  } catch(e){
+    console.error('Backup failed', e);
+    return { ok:false, error:String(e) };
+  }
+}
+app.post('/api/admin/backup-now', async (req,res)=>{
+  const r = await uploadBackupNow();
+  if(!r.ok) return res.status(500).json(r);
+  res.json(r);
+});
+if(BACKUP_INTERVAL_HOURS>0){
+  const ms = BACKUP_INTERVAL_HOURS*3600*1000;
+  setTimeout(async function tick(){ try{ await uploadBackupNow(); } catch{}; setTimeout(tick, ms); }, ms);
+}
 
 // Admin data reconciliation: demote orphaned show expenses to daily
 app.post('/api/admin/reconcile', (req,res)=>{
