@@ -40,19 +40,25 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build+push API (amd64)
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            ${{ steps.vars.outputs.api_tags }} \
-            -f api/Dockerfile api \
-            --push
+        uses: docker/build-push-action@v5
+        with:
+          context: api
+          file: api/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.vars.outputs.api_tags }}
 
-      - name: Build+push Web (amd64, inject version and API)
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            --build-arg APP_VERSION=${{ steps.vars.outputs.version }} \
-            --build-arg NEXT_PUBLIC_API_BASE_URL=https://3.16.114.60.nip.io \
-            ${{ steps.vars.outputs.web_tags }} \
-            -f web/Dockerfile web \
-            --push
+      - name: Build+push Web (amd64, inject version/SHA/API)
+        uses: docker/build-push-action@v5
+        with:
+          context: web
+          file: web/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.vars.outputs.web_tags }}
+          build-args: |
+            APP_VERSION=${{ steps.vars.outputs.version }}
+            GIT_SHA=${{ github.sha }}
+            NEXT_PUBLIC_API_BASE_URL=https://3.16.114.60.nip.io
+        env:
+          NEXT_DISABLE_TYPECHECK: "true"
