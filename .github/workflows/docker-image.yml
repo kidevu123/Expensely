@@ -12,50 +12,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute tags
-        id: t
+      - name: Set version/tag names
+        id: vars
         run: |
-          SHORT=$(git rev-parse --short HEAD)
+          REF="${GITHUB_REF##*/}"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            SEMVER="${GITHUB_REF##*/}"
-            echo "web_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:${SEMVER},${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest" >> $GITHUB_OUTPUT
-            echo "api_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:${SEMVER},${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest" >> $GITHUB_OUTPUT
-            echo "app_version=${SEMVER}" >> $GITHUB_OUTPUT
+            VERSION="$REF"
+            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:$VERSION --tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest"
+            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest"
           else
-            echo "web_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest" >> $GITHUB_OUTPUT
-            echo "api_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge" >> $GITHUB_OUTPUT
-            echo "app_version=${SHORT}" >> $GITHUB_OUTPUT
+            SHA_SHORT="$(git rev-parse --short HEAD)"
+            VERSION="$SHA_SHORT"
+            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge"
+            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge"
           fi
-          echo "short_sha=${SHORT}" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "web_tags=$WEB_TAGS" >> $GITHUB_OUTPUT
+          echo "api_tags=$API_TAGS" >> $GITHUB_OUTPUT
 
-      - uses: docker/setup-buildx-action@v3
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - uses: docker/login-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build+push API (amd64)
-        uses: docker/build-push-action@v5
-        with:
-          context: ./api
-          file: ./api/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.t.outputs.api_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            ${{ steps.vars.outputs.api_tags }} \
+            -f api/Dockerfile api \
+            --push
 
-      - name: Build+push Web (amd64)
-        uses: docker/build-push-action@v5
-        with:
-          context: ./web
-          file: ./web/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.t.outputs.web_tags }}
-          build-args: |
-            APP_VERSION=${{ steps.t.outputs.app_version }}
-            GIT_SHA=${{ steps.t.outputs.short_sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build+push Web (amd64, inject version)
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg APP_VERSION=${{ steps.vars.outputs.version }} \
+            ${{ steps.vars.outputs.web_tags }} \
+            -f web/Dockerfile web \
+            --push
