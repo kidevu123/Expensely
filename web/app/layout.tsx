@@ -4,7 +4,8 @@ const UserNav = dynamic(() => import('./user-nav'), { ssr: false });
 const FeedbackButton = dynamic(() => import('./feedback-button'), { ssr: false });
 export const metadata = { title: 'Expensely' };
 export default function RootLayout({ children }: { children: React.ReactNode }){
-  const version = process.env.NEXT_PUBLIC_APP_VERSION || 'dev';
+  const rawVersion = process.env.NEXT_PUBLIC_APP_VERSION || 'dev';
+  const version = rawVersion.startsWith('v')? rawVersion: `v${rawVersion}`;
   return (
     <html lang="en"><body>
       <header className="brand-header shadow sticky top-0 z-10">

@@ -150,12 +150,12 @@ app.get('/api/admin/metrics', (_req,res)=>{
 // Users admin
 app.get('/api/users', (_req,res)=>{ res.json(memory.users); });
 app.post('/api/users', (req,res)=>{
-  const { email, username, name, role, password, phone, avatar_url, permissions } = req.body||{}; if(!(email||username)) return res.status(400).json({error:'username or email required'});
+  const { email, username, name, role, password, phone, avatar_url, permissions, allow_daily_expenses } = req.body||{}; if(!(email||username)) return res.status(400).json({error:'username or email required'});
   const e = email? String(email).toLowerCase(): '';
   const uname = username? String(username): (e? e.split('@')[0]: '');
   if(e && memory.users.find(u=>u.email===e)) return res.status(409).json({ error:'exists' });
   if(uname && memory.users.find(u=>u.username===uname)) return res.status(409).json({ error:'username exists' });
-  const u={ id:`u-${Date.now()}`, email:e, username: uname, name:name||uname||e, role: role||'attendee', permissions: Array.isArray(permissions)? permissions: [], password_hash: password? bcrypt.hashSync(String(password), 10): undefined, phone_e164: phone||'', allow_daily_expenses: false, avatar_url: avatar_url||'' };
+  const u={ id:`u-${Date.now()}`, email:e, username: uname, name:name||uname||e, role: role||'attendee', permissions: Array.isArray(permissions)? permissions: [], password_hash: password? bcrypt.hashSync(String(password), 10): undefined, phone_e164: phone||'', allow_daily_expenses: !!allow_daily_expenses, avatar_url: avatar_url||'' };
   memory.users.push(u); saveUsersToDisk(memory.users); audit(req,'create','user',u.id,{ email: u.email, role: u.role }); res.json(u);
 });
 app.patch('/api/users/:id', (req,res)=>{

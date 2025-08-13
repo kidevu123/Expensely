@@ -24,20 +24,32 @@ set -x
 TAG_LATEST="latest"
 TAG_VERSION="${VERSION:-}"
 
-# Build API image
-docker build -t "$DOCKERHUB_USER/expensely-api:$TAG_LATEST" -f "$ROOT_DIR/api/Dockerfile" "$ROOT_DIR/api"
-# Build Web image (inject version for UI)
-if [[ -n "$TAG_VERSION" ]]; then
-  docker build --build-arg APP_VERSION="$TAG_VERSION" -t "$DOCKERHUB_USER/expensely-web:$TAG_LATEST" -t "$DOCKERHUB_USER/expensely-web:$TAG_VERSION" -f "$ROOT_DIR/web/Dockerfile" "$ROOT_DIR/web"
-else
-  docker build -t "$DOCKERHUB_USER/expensely-web:$TAG_LATEST" -f "$ROOT_DIR/web/Dockerfile" "$ROOT_DIR/web"
-fi
+# Ensure buildx builder for multi-arch
+docker buildx ls >/dev/null 2>&1 || docker buildx create --use --name expensely-multi
+docker buildx use expensely-multi
 
-# Push
-docker push "$DOCKERHUB_USER/expensely-api:$TAG_LATEST"
-docker push "$DOCKERHUB_USER/expensely-web:$TAG_LATEST"
+# Build+push API multi-arch
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t "$DOCKERHUB_USER/expensely-api:$TAG_LATEST" \
+  -f "$ROOT_DIR/api/Dockerfile" "$ROOT_DIR/api" \
+  --push
+
+# Build+push Web multi-arch, inject version
 if [[ -n "$TAG_VERSION" ]]; then
-  docker push "$DOCKERHUB_USER/expensely-web:$TAG_VERSION"
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    --build-arg APP_VERSION="$TAG_VERSION" \
+    -t "$DOCKERHUB_USER/expensely-web:$TAG_LATEST" \
+    -t "$DOCKERHUB_USER/expensely-web:$TAG_VERSION" \
+    -f "$ROOT_DIR/web/Dockerfile" "$ROOT_DIR/web" \
+    --push
+else
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    -t "$DOCKERHUB_USER/expensely-web:$TAG_LATEST" \
+    -f "$ROOT_DIR/web/Dockerfile" "$ROOT_DIR/web" \
+    --push
 fi
 
 set +x
