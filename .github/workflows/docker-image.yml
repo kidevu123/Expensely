@@ -12,19 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set version/tag names
+      - name: Compute tags and version
         id: vars
         run: |
           REF="${GITHUB_REF##*/}"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION="$REF"
-            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:$VERSION --tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest"
-            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest"
+            WEB_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:${VERSION},${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest"
+            API_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest"
           else
             SHA_SHORT="$(git rev-parse --short HEAD)"
             VERSION="$SHA_SHORT"
-            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge"
-            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge"
+            WEB_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge"
+            API_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "web_tags=$WEB_TAGS" >> $GITHUB_OUTPUT
@@ -40,18 +40,22 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build+push API (amd64)
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            ${{ steps.vars.outputs.api_tags }} \
-            -f api/Dockerfile api \
-            --push
+        uses: docker/build-push-action@v5
+        with:
+          context: api
+          file: api/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.vars.outputs.api_tags }}
 
-      - name: Build+push Web (amd64, inject version)
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            --build-arg APP_VERSION=${{ steps.vars.outputs.version }} \
-            ${{ steps.vars.outputs.web_tags }} \
-            -f web/Dockerfile web \
-            --push
+      - name: Build+push Web (amd64, inject version/SHA)
+        uses: docker/build-push-action@v5
+        with:
+          context: web
+          file: web/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.vars.outputs.web_tags }}
+          build-args: |
+            APP_VERSION=${{ steps.vars.outputs.version }}
+            GIT_SHA=${{ github.sha }}
