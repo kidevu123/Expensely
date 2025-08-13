@@ -12,19 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute tags and version
+      - name: Set version/tag names
         id: vars
         run: |
           REF="${GITHUB_REF##*/}"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION="$REF"
-            WEB_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:${VERSION},${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest"
-            API_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest"
+            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:$VERSION --tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest"
+            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest"
           else
             SHA_SHORT="$(git rev-parse --short HEAD)"
             VERSION="$SHA_SHORT"
-            WEB_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge"
-            API_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge"
+            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge"
+            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "web_tags=$WEB_TAGS" >> $GITHUB_OUTPUT
@@ -48,7 +48,7 @@ jobs:
           push: true
           tags: ${{ steps.vars.outputs.api_tags }}
 
-      - name: Build+push Web (amd64, inject version/SHA)
+      - name: Build+push Web (amd64, inject version/SHA/API)
         uses: docker/build-push-action@v5
         with:
           context: web
@@ -59,5 +59,6 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.vars.outputs.version }}
             GIT_SHA=${{ github.sha }}
+            NEXT_PUBLIC_API_BASE_URL=https://3.16.114.60.nip.io
         env:
           NEXT_DISABLE_TYPECHECK: "true"
