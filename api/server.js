@@ -204,10 +204,13 @@ app.get('/api/zoho/orgs', (_req, res) => {
 // Shows (filtered by user role)
 app.get('/api/shows', (req, res) => {
   const email = String(req.header('x-user-email')||'').toLowerCase();
-  const me = memory.users.find(u=>u.email===email);
+  const username = String(req.header('x-user-username')||'');
+  const me = memory.users.find(u=> (email && u.email===email) || (username && u.username===username));
   if(!me) return res.json([]);
   if(me.role==='admin' || me.role==='coordinator' || me.role==='accountant') return res.json(memory.shows);
   const allowedShowIds = new Set(memory.showParticipants.filter(p=>p.user_id===me.id).map(p=>p.show_id));
+  // For attendees: return all shows they are assigned to, including those closed (they still need to see them),
+  // but submission blocking is enforced at POST /api/expenses.
   res.json(memory.shows.filter(s=>allowedShowIds.has(s.id)));
 });
 app.post('/api/shows', (req, res) => {
