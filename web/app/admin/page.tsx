@@ -180,7 +180,7 @@ export default function Admin(){
           <div className="flex gap-3"><button className="btn-primary" type="submit">Add user</button></div>
         </form>
 
-        <div className="card">
+          <div className="card">
           <h3 className="font-medium mb-2">Users</h3>
           <div className="text-xs text-slate-500 mb-2">Manage users. Click Edit to change permissions, phone, or password.</div>
           <table className="w-full text-sm table-fixed">
@@ -209,6 +209,7 @@ export default function Admin(){
                   <td className="py-1">
                     <div className="flex gap-2">
                       <button className="btn-outline" onClick={()=>setEditor({ user: u, phone: u.phone_e164||'', permissions: u.permissions||[], daily: !!u.allow_daily_expenses, password: '' })} type="button">Edit</button>
+                      <button className="btn-outline" onClick={async()=>{ const pick=await new Promise<string|undefined>((resolve)=>{ const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.onchange=async()=>{ const f=i.files?.[0]; if(!f) return resolve(undefined); const r=new FileReader(); r.onload=()=>resolve(String(r.result)); r.readAsDataURL(f); }; i.click(); }); if(!pick) return; await fetch(`${API}/api/users/${u.id}/avatar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: pick, content_type: 'image/jpeg' }) }); await load(); }} type="button">Avatar</button>
                       <button className="btn-outline" onClick={()=>delUser(u.id)} type="button">Delete</button>
                     </div>
                   </td>
