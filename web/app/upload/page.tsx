@@ -100,7 +100,12 @@ export default function Upload(){
   const [last4, setLast4] = useState('');
 
   useEffect(()=>{ setMounted(true); setCurrentUser(getUser()); },[]);
-  useEffect(()=>{ if(!mounted) return; (async()=>{ const r=await authFetch(`${API}/api/shows`); const j=await r.json(); setShows(j); if(j[0]){ setShowId(j[0].id); setMode('show'); } else { setMode('daily'); } })(); },[mounted]);
+  useEffect(()=>{ if(!mounted) return; (async()=>{ const r=await authFetch(`${API}/api/shows`); const j=await r.json(); setShows(j);
+    const firstOpen = (j||[]).find((s:any)=>!s.closed);
+    if(firstOpen){ setShowId(firstOpen.id); setMode('show'); }
+    else if(j && j[0]){ setShowId(j[0].id); setMode('show'); }
+    else { setMode('daily'); }
+  })(); },[mounted]);
 
   async function runOCR(f:File){
     setBusy(true); setOcrText('');
@@ -198,8 +203,11 @@ export default function Upload(){
             </select>
           )}
         </div>
+         {mode==='show' && selectedShow?.closed && (
+           <div className="card bg-amber-50 border-amber-200 text-amber-800">Submissions are closed for {selectedShow.name}. Choose another show or switch to Daily.</div>
+         )}
          <div className="card">
-           <input className="file-input" type="file" accept="image/*" onChange={e=>{ const f=e.target.files?.[0]||null; setFile(f); if(f) runOCR(f); }} />
+           <input className="file-input" type="file" accept="image/*" disabled={mode==='show' && !!selectedShow?.closed} onChange={e=>{ const f=e.target.files?.[0]||null; setFile(f); if(f) runOCR(f); }} />
           {busy && <p className="mt-2 text-sm text-slate-600">Scanning…</p>}
           {ocrText && <details className="mt-3"><summary className="cursor-pointer text-sm text-slate-600">Show OCR text</summary><pre className="mt-2 text-xs bg-slate-50 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap">{ocrText}</pre></details>}
           {fileData && <img alt="receipt preview" src={fileData} className="mt-3 w-full rounded-xl max-h-[520px] object-contain bg-slate-100" />}
@@ -275,7 +283,7 @@ export default function Upload(){
             <textarea className="input" rows={4} placeholder="Optional" value={parsed.notes} onChange={e=>setParsed({...parsed,notes:e.target.value})} />
           </div>
           <div className="flex gap-3 mt-2">
-            <button className="btn-primary" type="submit" disabled={!parsed.total}>Save expense</button>
+            <button className="btn-primary" type="submit" disabled={!parsed.total || (mode==='show' && !!selectedShow?.closed)}>Save expense</button>
             <button type="button" className="btn-primary" onClick={exportJSON}>Export JSON</button>
             <button type="button" className="btn-outline" onClick={resetAll}>Reset</button>
           </div>
