@@ -96,16 +96,17 @@ export default function ShowDetail({ params }: { params: { id: string } }){
             <input className="input" placeholder="Type (e.g., Booth, Electrical, Utilities)" value={newCost.type} onChange={e=>setNewCost(v=>({ ...v, type: e.target.value }))} />
             <input className="input md:col-span-2" placeholder="Description" value={newCost.description} onChange={e=>setNewCost(v=>({ ...v, description: e.target.value }))} />
             <input className="input" placeholder="Amount" type="number" value={newCost.amount} onChange={e=>setNewCost(v=>({ ...v, amount: e.target.value }))} />
-            <input className="file-input file-only" type="file" accept="image/*,application/pdf" onChange={e=> setNewCost(v=>({ ...v, file: e.target.files?.[0]||null }))} />
+            <input className="input file-only" type="file" accept="image/*,application/pdf" onChange={e=> setNewCost(v=>({ ...v, file: e.target.files?.[0]||null }))} />
             <button className="btn-primary" onClick={async()=>{
               if(!newCost.type || !newCost.amount) return alert('Type and amount required');
               let file_id: string|undefined = undefined;
+              let file_url: string|undefined = undefined;
               if(newCost.file){
                 const b64 = await new Promise<string>((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(String(r.result)); r.onerror=reject; r.readAsDataURL(newCost.file as File); });
                 const fr = await authFetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: b64, content_type: newCost.file?.type||'image/jpeg' }) });
-                const fj = await fr.json(); file_id = fj.id;
+                const fj = await fr.json(); file_id = fj.id; file_url = fj.url;
               }
-              await authFetch(`${API}/api/shows/${showId}/costs`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type: newCost.type, description: newCost.description, amount: Number(newCost.amount), file_id }) });
+              await authFetch(`${API}/api/shows/${showId}/costs`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type: newCost.type, description: newCost.description, amount: Number(newCost.amount), file_id, file_url }) });
               setNewCost({ type:'', description:'', amount:'', file:null });
               await load();
             }}>Add</button>

@@ -114,7 +114,7 @@ export default function Accounting(){
         <button className="btn-primary" onClick={()=>setShowReport(true)} type="button">Generate report</button>
       </div>
       <div className="grid gap-3">
-        <div className="card" onDragOver={e=>e.preventDefault()} onDrop={async()=>{ if(!dragging) return; await fetch(`${API}/api/expenses/${dragging.id}/assign`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ org_label: null }) }); setDragging(null); const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e,...d]); }}>
+        <div className="card" onDragOver={e=>e.preventDefault()} onDrop={async()=>{ if(!dragging) return; await fetch(`${API}/api/expenses/${dragging.id}/assign`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ org_label: null }) }); setDragging(null); const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e,...d])); }}>
           <div className="flex items-center justify-between mb-2"><h4 className="font-medium">Unassigned <span className="ml-2 text-xs text-slate-500">{allExpenses.filter(e=>e.status==='unassigned').length}</span></h4>
             <div className="flex items-center gap-2">
               <select id="assignOrg" className="select w-48">
@@ -132,7 +132,7 @@ export default function Accounting(){
             <table className="w-full text-sm">
               <thead className="text-slate-500"><tr><th className="text-left py-2 w-8"></th><th className="text-left py-2">Merchant</th><th className="text-left">Amount</th><th className="text-left">Category</th><th className="text-left">Card</th><th className="text-left">Uploader</th><th className="text-left">Type</th><th></th></tr></thead>
               <tbody>
-                {allExpenses.filter(e=>e.status==='unassigned').map(e=> (
+                {uniqueById(allExpenses.filter(e=>e.status==='unassigned')).map(e=> (
                   <tr key={e.id} className="border-t">
                     <td className="py-2"><input type="checkbox" checked={!!selected[e.id]} onChange={()=>setSelected(s=>({ ...s, [e.id]: !s[e.id] }))} /></td>
                     <td className="py-2">{e.merchant}</td>
@@ -143,7 +143,7 @@ export default function Accounting(){
                     <td>
                       {(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}
                     </td>
-                    <td className="text-right space-x-2">{(()=>{ const url = e.file_url || (e.file_id? `${API}/files/${e.file_id}`:''); return url? (<a className="text-blue-600 underline text-xs" href={url} target="_blank" rel="noreferrer">view</a>): null; })()}<button className="text-xs text-slate-600 underline" onClick={()=>setEdit(e)}>edit</button><button className="text-xs text-red-600 underline" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>delete</button></td>
+                    <td className="text-right space-x-2">{(()=>{ const url = e.file_url || (e.file_id? `${API}/files/${e.file_id}`:''); return url? (<a className="text-blue-600 underline text-xs" href={url} target="_blank" rel="noreferrer">view</a>): null; })()}<button className="text-xs text-slate-600 underline" onClick={()=>setEdit(e)}>edit</button><button className="text-xs text-red-600 underline" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e1, ...d1])); }}>delete</button></td>
                   </tr>
                 ))}
               </tbody>
