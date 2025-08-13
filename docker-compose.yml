@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: expensely
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/expensely
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      AVIATIONSTACK_KEY: ${AVIATIONSTACK_KEY}
+      AERODATABOX_RAPIDAPI_KEY: ${AERODATABOX_RAPIDAPI_KEY}
+      DATA_DIR: /data
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "4000:4000"
+    volumes:
+      - data:/data
+
+  web:
+    build: ./web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  db_data:
+  data:
+

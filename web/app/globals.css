@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+html, body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; @apply bg-gradient-to-br from-sky-50 to-indigo-50 text-slate-900 min-h-screen; }
+.brand-header { @apply bg-gradient-to-r from-indigo-600 to-sky-600 text-white; }
+.card { @apply bg-white/90 backdrop-blur rounded-2xl shadow-md p-4 border border-white/60; }
+.btn-primary { @apply rounded-2xl px-4 py-2 text-white bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 shadow; }
+.btn-outline { @apply rounded-2xl border border-slate-300 px-4 py-2 hover:bg-slate-100; }
+.btn-danger { @apply rounded-2xl px-4 py-2 text-white bg-red-600 hover:bg-red-700 shadow; }
+/* Soft pill button */
+.btn-soft { @apply rounded-full px-3 py-1 text-xs border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100; }
+.input { @apply w-full h-10 rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300; }
+.select { @apply w-full h-10 rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300; }
+
+.profile-card { @apply card flex items-center gap-4 p-5; }
+.avatar-lg { @apply w-20 h-20 rounded-full border-2 border-white shadow; }
+
+/* Mobile tweaks */
+@media (max-width: 640px){
+  .card { @apply p-3 rounded-xl; }
+  .btn-primary, .btn-outline { @apply rounded-xl px-3 py-2; }
+}
+
+/* Accounting lanes */
+.lane { @apply card flex flex-col; height: 420px; }
+.lane-body { @apply mt-2 space-y-2 overflow-y-auto pr-1; }
+.lane-title { @apply flex items-center justify-between; }
+
+/* Polished file input, reusable */
+.file-input { @apply block w-full text-sm text-slate-700 border border-slate-300 rounded-xl cursor-pointer bg-white;
+  @apply px-3 py-2;
+}
+.file-input { @apply file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100; }
+
+/* Optional helper to hide filename text and show only the button */
+.file-only { @apply text-transparent w-auto inline-block; }
+
+/* Colored panels for participant sections */
+.panel-flight { @apply border border-blue-300 bg-blue-50 rounded-xl; }
+.panel-hotel { @apply border border-rose-300 bg-rose-50 rounded-xl; }
+.panel-car { @apply border border-emerald-300 bg-emerald-50 rounded-xl; }
+
