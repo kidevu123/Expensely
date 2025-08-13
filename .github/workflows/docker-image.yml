@@ -19,15 +19,11 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             SEMVER="${GITHUB_REF##*/}"
             echo "web_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:${SEMVER},${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest" >> $GITHUB_OUTPUT
-            echo "web_unique=${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:${SEMVER}+${SHORT}" >> $GITHUB_OUTPUT
-            echo "api_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest" >> $GITHUB_OUTPUT
-            echo "api_unique=${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:${SEMVER}+${SHORT}" >> $GITHUB_OUTPUT
+            echo "api_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:${SEMVER},${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest" >> $GITHUB_OUTPUT
             echo "app_version=${SEMVER}" >> $GITHUB_OUTPUT
           else
-            echo "web_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge" >> $GITHUB_OUTPUT
-            echo "web_unique=${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge-${SHORT}" >> $GITHUB_OUTPUT
+            echo "web_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest" >> $GITHUB_OUTPUT
             echo "api_tags=${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge" >> $GITHUB_OUTPUT
-            echo "api_unique=${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge-${SHORT}" >> $GITHUB_OUTPUT
             echo "app_version=${SHORT}" >> $GITHUB_OUTPUT
           fi
           echo "short_sha=${SHORT}" >> $GITHUB_OUTPUT
@@ -39,29 +35,25 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build+push API
+      - name: Build+push API (amd64)
         uses: docker/build-push-action@v5
         with:
           context: ./api
           file: ./api/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: |
-            ${{ steps.t.outputs.api_tags }}
-            ${{ steps.t.outputs.api_unique }}
+          tags: ${{ steps.t.outputs.api_tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build+push Web
+      - name: Build+push Web (amd64)
         uses: docker/build-push-action@v5
         with:
           context: ./web
           file: ./web/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: |
-            ${{ steps.t.outputs.web_tags }}
-            ${{ steps.t.outputs.web_unique }}
+          tags: ${{ steps.t.outputs.web_tags }}
           build-args: |
             APP_VERSION=${{ steps.t.outputs.app_version }}
             GIT_SHA=${{ steps.t.outputs.short_sha }}
