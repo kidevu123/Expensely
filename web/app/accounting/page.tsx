@@ -26,7 +26,7 @@ export default function Accounting(){
     const header = ['merchant','date','time','subtotal','tax','tip','total','last4','uploader','notes','type','receipt_url'];
     const lines = [header.join(',')];
     items.forEach(e=>{
-      const url = e.file_id? `${API}/files/${e.file_id}`:'';
+      const url = e.file_url || (e.file_id? `${API}/files/${e.file_id}`:'');
       const row = [
         JSON.stringify(e.merchant||''),
         JSON.stringify(e.date||''),
@@ -142,7 +142,7 @@ export default function Accounting(){
                     <td>
                       {(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}
                     </td>
-                    <td className="text-right space-x-2">{e.file_id && (<button className="text-blue-600 underline text-xs" onClick={()=>setPreviewUrl(`${API}/files/${e.file_id}`)}>view</button>)}<button className="text-xs text-slate-600 underline" onClick={()=>setEdit(e)}>edit</button><button className="text-xs text-red-600 underline" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>delete</button></td>
+                    <td className="text-right space-x-2">{(()=>{ const url = e.file_url || (e.file_id? `${API}/files/${e.file_id}`:''); return url? (<a className="text-blue-600 underline text-xs" href={url} target="_blank" rel="noreferrer">view</a>): null; })()}<button className="text-xs text-slate-600 underline" onClick={()=>setEdit(e)}>edit</button><button className="text-xs text-red-600 underline" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>delete</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -176,7 +176,7 @@ export default function Accounting(){
                           <td>{e.last4? `**** ${e.last4}`:''}</td>
                           <td>{e.created_by||'—'}</td>
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
-                          <td className="text-right space-x-2">{e.file_id && (<button className="text-blue-600 underline text-xs" onClick={()=>setPreviewUrl(`${API}/files/${e.file_id}`)}>view</button>)}<button className="text-xs text-slate-600 underline" onClick={()=>setEdit(e)}>edit</button><button className="text-xs text-red-600 underline" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>delete</button></td>
+                          <td className="text-right space-x-2">{(()=>{ const url = e.file_url || (e.file_id? `${API}/files/${e.file_id}`:''); return url? (<a className="text-blue-600 underline text-xs" href={url} target="_blank" rel="noreferrer">view</a>): null; })()}<button className="text-xs text-slate-600 underline" onClick={()=>setEdit(e)}>edit</button><button className="text-xs text-red-600 underline" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>delete</button></td>
                         </tr>
                       ))}
                     </tbody>
@@ -298,9 +298,7 @@ function ExpenseCard({ e, onEdit, onDragStart, checked, onToggle, setPreviewUrl 
         <div>
           <div className="font-medium">{e.merchant} — ${'{'}e.total{'}'}</div>
           <div className="text-xs text-slate-500">{e.date} {e.time} {e.org_label? `→ ${e.org_label}`:''} {e.last4? `• **** ${e.last4}`:''} {e.pushed? '• pushed':''}</div>
-          {e.file_id && setPreviewUrl && (
-            <button className="text-xs text-blue-600 underline" onClick={()=>setPreviewUrl(`${API}/files/${e.file_id}`)}>view receipt</button>
-          )}
+          {(() => { const url = e.file_url || (e.file_id? `${API}/files/${e.file_id}`:''); return url? (<a className="text-xs text-blue-600 underline" href={url} target="_blank" rel="noreferrer">view receipt</a>) : null; })()}
         </div>
       </div>
       <div className="flex gap-2">

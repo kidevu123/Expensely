@@ -116,6 +116,10 @@ async function getZohoAccessToken(){
 }
 
 async function ensureTeamAndFolders(){
+  // If folders are pre-configured via env, skip team discovery to avoid hard failures
+  if (ZOHO.receiptsFolderId && ZOHO.backupsFolderId){
+    return { receiptsFolderId: ZOHO.receiptsFolderId, backupsFolderId: ZOHO.backupsFolderId };
+  }
   const at = await getZohoAccessToken();
   const { workdrive } = zohoDomains(ZOHO.dc);
   // Team
@@ -454,8 +458,8 @@ app.get('/api/shows/:id/costs', (req,res)=>{
   res.json(memory.showCosts.filter(c=>c.show_id===req.params.id));
 });
 app.post('/api/shows/:id/costs', (req,res)=>{
-  const { type, description, amount, file_id } = req.body||{};
-  const item = { id:`c-${Date.now()}`, show_id: req.params.id, type, description, amount, file_id };
+  const { type, description, amount, file_id, file_url } = req.body||{};
+  const item = { id:`c-${Date.now()}`, show_id: req.params.id, type, description, amount, file_id, file_url };
   memory.showCosts.push(item);
   // Mirror this cost as an expense so it appears in Accounting immediately
   const created_by = String(req.header('x-user-email')||'').toLowerCase() || null;
@@ -473,6 +477,7 @@ app.post('/api/shows/:id/costs', (req,res)=>{
     category: 'show_cost',
     notes: description||'',
     file_id,
+    file_url,
     status: 'unassigned',
     org_label: null,
     pushed: false,
@@ -499,7 +504,7 @@ app.delete('/api/shows/:id/costs/:cid', (req,res)=>{
 
 // Expenses
 app.post('/api/expenses', (req, res) => {
-  const { show_id, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id, is_daily, last4 } = req.body || {};
+  const { show_id, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id, file_url, is_daily, last4 } = req.body || {};
   if(!is_daily && !show_id) return res.status(400).json({ error:'show_id required unless is_daily' });
   // Block submissions to closed shows at the API layer
   if(!is_daily && show_id){
@@ -512,7 +517,7 @@ app.post('/api/expenses', (req, res) => {
   const last4clean = (last4||'').toString().replace(/\D/g,'').slice(-4);
   if(last4clean && memory.cardMap[last4clean]) org_label = memory.cardMap[last4clean];
   const created_by = actorFrom(req);
-  const e = { id: `e-${Date.now()}`, show_id: is_daily? null: show_id, is_daily: !!is_daily, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id, status: org_label? 'assigned':'unassigned', org_label, pushed: false, last4: last4clean||null, created_by };
+  const e = { id: `e-${Date.now()}`, show_id: is_daily? null: show_id, is_daily: !!is_daily, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id, file_url, status: org_label? 'assigned':'unassigned', org_label, pushed: false, last4: last4clean||null, created_by };
   memory.expenses.push(e); audit(req,'create','expense',e.id,{ show_id, is_daily, total });
   saveTo(EXPENSES_PATH, memory.expenses);
   res.json(e);

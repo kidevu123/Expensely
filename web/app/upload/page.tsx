@@ -147,7 +147,8 @@ export default function Upload(){
 
   async function submit(e:any){ e.preventDefault();
     let file_id: string|undefined;
-    if(fileData){ const fr=await fetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: fileData, content_type: file?.type||'image/jpeg' })}); const fj=await fr.json(); file_id=fj.id; }
+    let file_url: string|undefined;
+    if(fileData){ const fr=await fetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: fileData, content_type: file?.type||'image/jpeg' })}); const fj=await fr.json(); file_id=fj.id; file_url=fj.url; }
     const r = await fetch(`${API}/api/expenses`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ 
       show_id: mode==='show'? showId: undefined,
       is_daily: mode==='daily',
@@ -161,6 +162,7 @@ export default function Upload(){
       category: parsed.category,
       notes: parsed.notes,
       file_id,
+      file_url,
       last4: last4 || undefined
     }) });
     const jr = await r.json().catch(()=>({}));

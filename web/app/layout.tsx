@@ -4,9 +4,12 @@ const UserNav = dynamic(() => import('./user-nav'), { ssr: false });
 const FeedbackButton = dynamic(() => import('./feedback-button'), { ssr: false });
 export const metadata = { title: 'Expensely' };
 export default function RootLayout({ children }: { children: React.ReactNode }){
-  const rawVersion = process.env.NEXT_PUBLIC_APP_VERSION || 'dev';
-  const version = rawVersion.startsWith('v')? rawVersion: `v${rawVersion}`;
-  const sha = (process.env.NEXT_PUBLIC_GIT_SHA||'').slice(0,7);
+  const rawVersion = process.env.NEXT_PUBLIC_APP_VERSION || '';
+  const shaEnv = process.env.NEXT_PUBLIC_GIT_SHA || '';
+  const semver = (rawVersion||'').replace(/^v/,'');
+  const isSemver = /^(\d+\.\d+\.\d+)/.test(semver);
+  const version = isSemver ? `v${semver}` : (rawVersion ? rawVersion : 'edge');
+  const sha = (shaEnv || (isSemver? '': rawVersion)).slice(0,7);
   return (
     <html lang="en"><body>
       <header className="brand-header shadow sticky top-0 z-10">
