@@ -46,6 +46,7 @@ export default function Accounting(){
   }
 
   useEffect(()=>{ setMounted(true); },[]);
+  function uniqueById(list:any[]){ const seen=new Set<string>(); const out:any[]=[]; for(const x of list){ if(!x||!x.id) continue; if(seen.has(x.id)) continue; seen.add(x.id); out.push(x);} return out; }
   useEffect(()=>{ (async()=>{
     const o = await (await fetch(`${API}/api/zoho/orgs`)).json(); setOrgs(o);
     const s = await (await authFetch(`${API}/api/shows`)).json(); setShows(s); if(s[0]) setShowId(s[0].id);
@@ -57,8 +58,8 @@ export default function Accounting(){
   })(); },[]);
 
   useEffect(()=>{ (async()=>{
-    if(!showId){ const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(d); setReport(null); return; }
-    const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e, ...d]); const r=await (await fetch(`${API}/api/reports/show/${showId}`)).json(); setReport(r);
+    if(!showId){ const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById(d)); setReport(null); return; }
+    const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e, ...d])); const r=await (await fetch(`${API}/api/reports/show/${showId}`)).json(); setReport(r);
     const all = await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all);
   })(); },[showId]);
 
