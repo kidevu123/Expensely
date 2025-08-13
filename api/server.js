@@ -167,7 +167,7 @@ async function uploadToWorkDrive({ buffer, filename, contentType, parentId }){
     method:'POST', headers:{ Authorization:`Zoho-oauthtoken ${at}`, ...headers }, body
   });
   const j = await r.json();
-  const fileId = j?.data?.files?.[0]?.id;
+  const fileId = j?.data?.files?.[0]?.id || j?.data?.id || j?.id;
   if(!fileId) throw new Error('WorkDrive upload failed');
   return fileId;
 }
@@ -179,8 +179,7 @@ async function createPublicLink(fileId){
     method:'POST', headers:{ Authorization:`Zoho-oauthtoken ${at}`, 'Content-Type':'application/json' },
     body: JSON.stringify({ resource_id:fileId, type:'public', access_level:'view' })
   });
-  const j = await r.json();
-  return j?.data?.link?.web_url || '';
+  try { const j = await r.json(); return j?.data?.link?.web_url || ''; } catch { return ''; }
 }
 
 // Auth stubs
