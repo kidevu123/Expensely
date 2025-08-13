@@ -1,0 +1,11 @@
+graph TD
+  A[Users] -- creates/updates --> E[Audit]
+  A -->|uploads| F[Files]
+  B[Shows] --> C[Participants]
+  B --> D[Show Costs]
+  D -- mirrors --> G[Expenses]
+  C --> B
+  G -->|assigned to| H[Companies]
+  G --> E
+  I[CardMap last4->org] -- auto-assign --> G
+  J[Feedback] --> E
