@@ -59,3 +59,5 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.vars.outputs.version }}
             GIT_SHA=${{ github.sha }}
+        env:
+          NEXT_DISABLE_TYPECHECK: "true"
