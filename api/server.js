@@ -89,6 +89,7 @@ const ZOHO = {
   teamId: process.env.ZWD_TEAM_ID || '',
   receiptsFolderId: process.env.ZWD_FOLDER_ID || '',
   backupsFolderId: process.env.ZWD_BACKUP_FOLDER_ID || '',
+  assetsFolderId: process.env.ZWD_ASSETS_FOLDER_ID || '',
 };
 
 function zohoDomains(dc){
@@ -117,8 +118,8 @@ async function getZohoAccessToken(){
 
 async function ensureTeamAndFolders(){
   // If folders are pre-configured via env, skip team discovery to avoid hard failures
-  if (ZOHO.receiptsFolderId && ZOHO.backupsFolderId){
-    return { receiptsFolderId: ZOHO.receiptsFolderId, backupsFolderId: ZOHO.backupsFolderId };
+  if (ZOHO.receiptsFolderId && ZOHO.backupsFolderId && ZOHO.assetsFolderId){
+    return { receiptsFolderId: ZOHO.receiptsFolderId, backupsFolderId: ZOHO.backupsFolderId, assetsFolderId: ZOHO.assetsFolderId };
   }
   const at = await getZohoAccessToken();
   const { workdrive } = zohoDomains(ZOHO.dc);
@@ -147,7 +148,8 @@ async function ensureTeamAndFolders(){
 
   ZOHO.receiptsFolderId = await ensureFolder(root, 'Expensely_Receipts', ZOHO.receiptsFolderId);
   ZOHO.backupsFolderId  = await ensureFolder(root, 'Expensely_Backups',  ZOHO.backupsFolderId);
-  return { receiptsFolderId: ZOHO.receiptsFolderId, backupsFolderId: ZOHO.backupsFolderId };
+  ZOHO.assetsFolderId   = await ensureFolder(root, 'Expensely_Assets',   ZOHO.assetsFolderId);
+  return { receiptsFolderId: ZOHO.receiptsFolderId, backupsFolderId: ZOHO.backupsFolderId, assetsFolderId: ZOHO.assetsFolderId };
 }
 
 function makeMultipart({buffer, filename, contentType}){
@@ -277,6 +279,26 @@ app.patch('/api/users/:id', (req,res)=>{
   }
   saveUsersToDisk(memory.users); audit(req,'update','user',u.id,{ role, name, phone, allow_daily_expenses, permissions });
   res.json(u);
+});
+
+// Upload avatar to Assets folder; delete previous
+app.post('/api/users/:id/avatar', async (req,res)=>{
+  try{
+    const u = memory.users.find(x=>x.id===req.params.id); if(!u) return res.status(404).json({error:'not found'});
+    const { data, content_type } = req.body||{}; if(!data) return res.status(400).json({error:'data required'});
+    const cleaned = String(data).replace(/^data:[^,]+,/, '');
+    const buf = Buffer.from(cleaned,'base64');
+    const ext = (content_type||'').includes('png')? '.png' : '.jpg';
+    const filename = `avatar-${u.id}-${Date.now()}${ext}`;
+    const { assetsFolderId } = await ensureTeamAndFolders();
+    const fileId = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'image/jpeg', parentId: assetsFolderId });
+    const url = await createPublicLink(fileId);
+    // no API to delete by URL; we only update pointer; optional: keep list if needed
+    u.avatar_url = url;
+    saveUsersToDisk(memory.users);
+    audit(req,'update','user_avatar',u.id,{ fileId });
+    res.json({ ok:true, url });
+  } catch (e){ console.error('avatar upload failed', e); res.status(500).json({ error:'upload failed' }); }
 });
 app.delete('/api/users/:id', (req,res)=>{
   memory.users = memory.users.filter(u=>u.id!==req.params.id);
