@@ -18,13 +18,13 @@ jobs:
           REF="${GITHUB_REF##*/}"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION="$REF"
-            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:$VERSION --tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest"
-            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest"
+            WEB_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:$VERSION,${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:latest"
+            API_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:$VERSION,${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:latest"
           else
             SHA_SHORT="$(git rev-parse --short HEAD)"
             VERSION="$SHA_SHORT"
-            WEB_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge"
-            API_TAGS="--tag ${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge"
+            WEB_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge,${{ secrets.DOCKERHUB_USERNAME }}/expensely-web:edge-$SHA_SHORT"
+            API_TAGS="${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge,${{ secrets.DOCKERHUB_USERNAME }}/expensely-api:edge-$SHA_SHORT"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "web_tags=$WEB_TAGS" >> $GITHUB_OUTPUT
