@@ -9,7 +9,7 @@ export default function Admin(){
   const [mounted, setMounted] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [metrics, setMetrics] = useState<any|null>(null);
-  const [form, setForm] = useState({ email:'', name:'', role:'attendee', password:'', phone:'', avatar_file: '' as any, permissions: [] as string[] });
+  const [form, setForm] = useState({ email:'', name:'', role:'attendee', password:'', phone:'', avatar_file: '' as any, permissions: [] as string[], daily: false });
   const [passwordEdits, setPasswordEdits] = useState<Record<string,string>>({});
   const [audit, setAudit] = useState<any[]>([]);
   const [editor, setEditor] = useState<{ user: User|null; phone: string; permissions: string[]; daily: boolean; password: string }|null>(null);
@@ -39,9 +39,9 @@ export default function Admin(){
       const fj = await fr.json();
       avatar_url = `${API}/files/${fj.id}`.replace(/\/$/, '')
     }
-    const payload:any = { email:form.email, name:form.name, role:form.role, password:form.password, phone:form.phone, avatar_url, permissions: form.permissions };
+    const payload:any = { email:form.email, name:form.name, role:form.role, password:form.password, phone:form.phone, avatar_url, permissions: Array.isArray(form.permissions)? form.permissions: [], allow_daily_expenses: !!(form as any).daily };
     const r = await fetch(`${API}/api/users`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    if(r.ok){ setForm({ email:'', name:'', role:'attendee', password:'', phone:'', avatar_file:'' }); load(); } else alert('Error adding user');
+    if(r.ok){ setForm({ email:'', name:'', role:'attendee', password:'', phone:'', avatar_file:'', permissions: [], daily: false }); load(); } else alert('Error adding user');
   }
   async function setRole(id:string, role:string){ await fetch(`${API}/api/users/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ role }) }); load(); }
   async function delUser(id:string){ if(!confirm('Delete user?')) return; await fetch(`${API}/api/users/${id}`, { method:'DELETE' }); load(); }
@@ -165,12 +165,16 @@ export default function Admin(){
           </div>
           <div>
             <label className="text-sm text-slate-600">Additional permissions</label>
-            <div className="flex gap-3 text-sm">
+            <div className="flex flex-wrap gap-4 text-sm items-center">
               {['admin','coordinator','accountant'].map(p=> (
-                <label key={p} className="flex items-center gap-2"><input type="checkbox" checked={form.permissions.includes(p)} onChange={(e)=>{
-                  setForm(prev=> ({...prev, permissions: e.target.checked? Array.from(new Set([...prev.permissions,p])): prev.permissions.filter(x=>x!==p)}));
+                <label key={p} className="flex items-center gap-2"><input type="checkbox" checked={Array.isArray(form.permissions) && form.permissions.includes(p)} onChange={(e)=>{
+                  setForm(prev=> {
+                    const current = Array.isArray(prev.permissions)? prev.permissions: [];
+                    return ({...prev, permissions: e.target.checked? Array.from(new Set([...current,p])): current.filter(x=>x!==p)});
+                  });
                 }} /> {p}</label>
               ))}
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!form.daily} onChange={e=>setForm(prev=>({...prev, daily: e.target.checked}))} /> daily</label>
             </div>
           </div>
           <div className="flex gap-3"><button className="btn-primary" type="submit">Add user</button></div>
