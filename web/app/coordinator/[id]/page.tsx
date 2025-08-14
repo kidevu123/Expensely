@@ -64,14 +64,23 @@ export default function ShowDetail({ params }: { params: { id: string } }){
           <ul className="text-sm">
             {participants.map((p:any)=> (
               <li key={p.user_id} className="border-b py-3">
-                <div className="font-medium mb-2">{p.user?.name||p.user?.email}</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium">{p.user?.name||p.user?.email}</div>
+                  <div className="flex items-center gap-2">
+                    <button className="btn-outline px-2 py-1 text-xs" aria-label="Edit">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487l3.651 3.65M4.5 20.25l6.808-1.134a2 2 0 00.99-.54l8.515-8.515a2 2 0 000-2.828l-2.8-2.8a2 2 0 00-2.828 0L6.69 12.948a2 2 0 00-.54.99L5.016 20.25H4.5z"/></svg>
+                    </button>
+                    <button className="btn-danger px-2 py-1 text-xs" aria-label="Remove" onClick={async()=>{ await authFetch(`${API}/api/shows/${showId}/participants/${p.user_id}`, { method:'DELETE' }); await load(); }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                </div>
                 <div className="grid md:grid-cols-6 gap-2 items-center w-full panel-flight p-3">
                   <input className="input" placeholder="Airline" defaultValue={p.airline||''} onBlur={e=>authFetch(`${API}/api/shows/${showId}/participants/${p.user_id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ airline: e.target.value }) })} />
                   <input className="input" placeholder="Flight conf" defaultValue={p.flight_conf||''} onBlur={e=>authFetch(`${API}/api/shows/${showId}/participants/${p.user_id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ flight_conf: e.target.value }) })} />
                   <button className="btn-outline px-2 py-1 text-xs" onClick={async()=>{ const depDate = show.starts_at? String(show.starts_at).slice(0,10): new Date().toISOString().slice(0,10); const info = await (await authFetch(`${API}/api/flight/lookup`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ airline: p.airline||'', flight_number: p.flight_conf||'', depart_date: depDate }) })).json(); await authFetch(`${API}/api/shows/${showId}/participants/${p.user_id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ flight_info: info }) }); await load(); }}>Lookup flight</button>
                   <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setHotelOpen(o=>({ ...o, [p.user_id]: !o[p.user_id] }))}>{hotelOpen[p.user_id]? '− Hotel':'＋ Add hotel'}</button>
                   <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setCarOpen(o=>({ ...o, [p.user_id]: !o[p.user_id] }))}>{carOpen[p.user_id]? '− Car':'＋ Add car rental'}</button>
-                  <button className="btn-outline px-2 py-1 text-xs" onClick={async()=>{ await authFetch(`${API}/api/shows/${showId}/participants/${p.user_id}`, { method:'DELETE' }); await load(); }}>Remove</button>
                 </div>
                 {hotelOpen[p.user_id] && (
                   <div className="grid md:grid-cols-5 gap-2 mt-2 w-full panel-hotel p-3">

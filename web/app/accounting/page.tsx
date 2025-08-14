@@ -173,16 +173,18 @@ export default function Accounting(){
                       {(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}
                     </td>
                      <td className="text-right">
-                         <div className="flex justify-end gap-2 whitespace-nowrap">
-                           {(()=>{ const url = resolveReceiptUrl(e);
-                           if(url){
-                             return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>setPreviewUrl(url)}>View</button>);
-                           }
-                           return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
-                         })()}
-                         <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
-                         <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e1, ...d1])); }}>Delete</button>
-                       </div>
+                  <div className="flex justify-end gap-2 whitespace-nowrap">
+                    {(()=>{ const url = resolveReceiptUrl(e);
+                      if(url){ return (<button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={()=>setPreviewUrl(url)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                      </button>);} return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>); })()}
+                    <button className="btn-outline px-2 py-1 text-xs" aria-label="Edit" onClick={()=>setEdit(e)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487l3.651 3.65M4.5 20.25l6.808-1.134a2 2 0 00.99-.54l8.515-8.515a2 2 0 000-2.828l-2.8-2.8a2 2 0 00-2.828 0L6.69 12.948a2 2 0 00-.54.99L5.016 20.25H4.5z"/></svg>
+                    </button>
+                    <button className="btn-danger px-2 py-1 text-xs" aria-label="Delete" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e1, ...d1])); }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  </div>
                      </td>
                   </tr>
                 ))}
@@ -219,13 +221,18 @@ export default function Accounting(){
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
                            <td className="text-right">
                               <div className="flex justify-end gap-2 whitespace-nowrap">
-                                {(()=>{ const url = resolveReceiptUrl(e);
-                                  if(url){ return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>setPreviewUrl(url)}>View</button>); }
-                                 return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
-                               })()}
-                               <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
-                               <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>Delete</button>
-                             </div>
+                                {(()=>{ const url = resolveReceiptUrl(e); if(url){ return (
+                                  <button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={()=>setPreviewUrl(url)}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                  </button>
+                                ); } return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>); })()}
+                                <button className="btn-outline px-2 py-1 text-xs" aria-label="Edit" onClick={()=>setEdit(e)}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487l3.651 3.65M4.5 20.25l6.808-1.134a2 2 0 00.99-.54l8.515-8.515a2 2 0 000-2.828l-2.8-2.8a2 2 0 00-2.828 0L6.69 12.948a2 2 0 00-.54.99L5.016 20.25H4.5z"/></svg>
+                                </button>
+                                <button className="btn-danger px-2 py-1 text-xs" aria-label="Delete" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                              </div>
                            </td>
                         </tr>
                       ))}
@@ -320,25 +327,38 @@ export default function Accounting(){
 
       {showReport && report && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowReport(false)}>
-          <div className="card max-w-3xl w-full" onClick={e=>e.stopPropagation()}>
-            <h4 className="font-medium mb-2">Trade show report</h4>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <h5 className="font-medium mb-1">By company</h5>
-                <div className="text-sm">{Object.entries(report.by_org||{}).map(([k,v]:any)=> (<div key={k} className="flex justify-between border-b py-1"><span>{k}</span><span>${'{'}Number(v).toFixed(2){'}'}</span></div>))}</div>
+          <div className="card max-w-4xl w-full" onClick={e=>e.stopPropagation()}>
+            <h4 className="font-medium mb-4">Trade show report</h4>
+            <div className="grid gap-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-slate-500">
+                    <tr><th className="text-left">Section</th><th className="text-right">Amount</th></tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(report.by_org||{}).map(([k,v]:any)=> (
+                      <tr key={`org-${k}`} className="border-t"><td>Org • {k}</td><td className="text-right">${'{'}Number(v).toFixed(2){'}'}</td></tr>
+                    ))}
+                    {Object.entries(report.by_category||{}).map(([k,v]:any)=> (
+                      <tr key={`cat-${k}`} className="border-t"><td>Category • {k}</td><td className="text-right">${'{'}Number(v).toFixed(2){'}'}</td></tr>
+                    ))}
+                    <tr className="border-t font-medium"><td>Total</td><td className="text-right">${'{'}Number(report.overall||0).toFixed(2){'}'}</td></tr>
+                  </tbody>
+                </table>
               </div>
               <div>
-                <h5 className="font-medium mb-1">By category</h5>
-                <div className="text-sm">{Object.entries(report.by_category||{}).map(([k,v]:any)=> (<div key={k} className="flex justify-between border-b py-1"><span>{k}</span><span>${'{'}Number(v).toFixed(2){'}'}</span></div>))}</div>
+                <h5 className="font-medium mb-1">Detail</h5>
+                <div className="max-h-64 overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-slate-500"><tr><th className="text-left">Merchant</th><th className="text-left">Type</th><th className="text-left">Category</th><th className="text-right">Amount</th><th className="text-left">Company</th></tr></thead>
+                    <tbody>
+                      {expenses.filter(e=> showId? e.show_id===showId: true).map(e=> (
+                        <tr key={e.id} className="border-t"><td>{e.merchant}</td><td>{e.is_daily? 'Daily': 'Show'}</td><td>{e.category||'—'}</td><td className="text-right">${e.total}</td><td>{e.org_label||'Unassigned'}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-            <div className="mt-3 text-sm">
-              <h5 className="font-medium mb-1">Detail</h5>
-              <ul className="max-h-64 overflow-auto">
-                {expenses.filter(e=> showId? e.show_id===showId: true).map(e=> (
-                  <li key={e.id} className="border-b py-1 flex justify-between"><span>{e.merchant}</span><span>${e.total}</span><span className="text-slate-500">{e.org_label||'Unassigned'}</span></li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>
