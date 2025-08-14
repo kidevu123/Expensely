@@ -70,6 +70,16 @@ export default function Accounting(){
     const all = await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all);
   })(); },[showId]);
 
+  async function linkReceiptToExpense(exp:any){
+    const url = prompt('Paste the receipt URL from WorkDrive');
+    if(!url) return;
+    try{
+      await fetch(`${API}/api/expenses/${exp.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ file_url: url }) });
+      const all = await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all);
+      const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e,...d]));
+    } catch {}
+  }
+
   const u = getUser();
   if(!mounted) return null;
   if(!u) return <main className="p-6 max-w-3xl mx-auto"><p>Please <a className="underline" href="/login">sign in</a>.</p></main>;
@@ -152,11 +162,12 @@ export default function Accounting(){
                     </td>
                      <td className="text-right">
                        <div className="flex justify-end gap-2 whitespace-nowrap">
-                        {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
-                           <a className={`btn-outline px-2 py-1 text-xs ${url? '':'opacity-50 cursor-not-allowed'}`} href={url||'#'} target={url? '_blank': undefined} rel={url? 'noreferrer': undefined} aria-disabled={!url} onClick={(ev)=>{ if(!url){ ev.preventDefault(); } }}>
-                             View
-                           </a>
-                         ); })()}
+                         {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
+                           if(url){
+                             return (<a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>);
+                           }
+                           return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
+                         })()}
                          <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
                          <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e1, ...d1])); }}>Delete</button>
                        </div>
@@ -196,11 +207,10 @@ export default function Accounting(){
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
                            <td className="text-right">
                              <div className="flex justify-end gap-2 whitespace-nowrap">
-                               {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
-                                 <a className={`btn-outline px-2 py-1 text-xs ${url? '':'opacity-50 cursor-not-allowed'}`} href={url||'#'} target={url? '_blank': undefined} rel={url? 'noreferrer': undefined} aria-disabled={!url} onClick={(ev)=>{ if(!url){ ev.preventDefault(); } }}>
-                                   View
-                                 </a>
-                               ); })()}
+                               {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
+                                 if(url){ return (<a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>); }
+                                 return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
+                               })()}
                                <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
                                <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>Delete</button>
                              </div>
