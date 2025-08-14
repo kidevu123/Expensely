@@ -215,7 +215,12 @@ export default function Upload(){
            <div className="card bg-amber-50 border-amber-200 text-amber-800">Submissions are closed for {selectedShow.name}. Choose another show or switch to Daily.</div>
          )}
          <div className="card">
-           <input className="file-input" type="file" accept="image/*" disabled={mode==='show' && !!selectedShow?.closed} onChange={e=>{ const f=e.target.files?.[0]||null; setFile(f); if(f) runOCR(f); }} />
+           <div>
+             <input id="upload-file" className="file-input" type="file" accept="image/*,application/pdf" disabled={mode==='show' && !!selectedShow?.closed} onChange={e=>{ const f=(e.target as HTMLInputElement).files?.[0]||null; setFile(f); if(f) runOCR(f); }} />
+             <button type="button" className="upload-icon" disabled={mode==='show' && !!selectedShow?.closed} onClick={()=>{ const el=document.getElementById('upload-file') as HTMLInputElement; el?.click(); }}>
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2"/></svg>
+             </button>
+           </div>
           {busy && <p className="mt-2 text-sm text-slate-600">Scanning…</p>}
           {ocrText && <details className="mt-3"><summary className="cursor-pointer text-sm text-slate-600">Show OCR text</summary><pre className="mt-2 text-xs bg-slate-50 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap">{ocrText}</pre></details>}
           {fileData && <img alt="receipt preview" src={fileData} className="mt-3 w-full rounded-xl max-h-[520px] object-contain bg-slate-100" />}
