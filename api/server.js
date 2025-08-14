@@ -625,6 +625,7 @@ app.post('/api/expenses', async (req, res) => {
 });
 app.get('/api/expenses', (req, res) => {
   const { show_id, daily, orphaned } = req.query;
+  // Backfill file links for mirrored costs if missing
   let list = memory.expenses.map(e=>{
     // Attach missing file_id/file_url from mirrored show cost if present
     if(e.cost_id && (!e.file_id || !e.file_url)){
@@ -633,6 +634,17 @@ app.get('/api/expenses', (req, res) => {
     }
     return e;
   });
+  // Auto-assign based on card last4 mapping if unassigned
+  let changed = false;
+  for(const e of list){
+    const last4 = String(e.last4||'').replace(/\D/g,'').slice(-4);
+    if(e.status==='unassigned' && (!e.org_label) && last4 && memory.cardMap[last4]){
+      e.org_label = memory.cardMap[last4];
+      e.status = 'assigned';
+      changed = true;
+    }
+  }
+  if(changed) saveTo(EXPENSES_PATH, memory.expenses);
   if(String(orphaned)==='1'){
     const valid = new Set(memory.shows.map(s=>s.id));
     list = list.filter(x=> x.show_id && !valid.has(x.show_id));

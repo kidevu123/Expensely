@@ -167,18 +167,35 @@ export default function ShowDetail({ params }: { params: { id: string } }){
               <thead className="text-slate-500"><tr><th className="text-left py-2">Description</th><th className="text-left">Category</th><th className="text-left">Paid by</th><th className="text-right">Amount</th><th className="text-right w-[160px]">Actions</th></tr></thead>
               <tbody>
                 {expenses.filter(e=> e.show_id===showId && e.category==='show_cost').map(e=> (
-                  <tr key={e.id} className="border-t">
+                  <tr key={e.id} id={`row-${e.id}`} className="border-t">
                     <td className="py-2">{e.notes||e.merchant}</td>
                     <td>{e.category||'—'}</td>
                     <td>{e.org_label||'Unassigned'}</td>
                     <td className="text-right">${e.total}</td>
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
-                        <button className="btn-outline px-2 py-1 text-xs" onClick={()=>{ const details=(document.getElementById(`row-${e.id}`) as HTMLTableRowElement).nextElementSibling as HTMLTableRowElement; if(details) details.classList.toggle('hidden'); }}>✏️</button>
+                        <button className="btn-outline px-2 py-1 text-xs" onClick={()=>{ const details=(document.getElementById(`edit-${e.id}`) as HTMLTableRowElement); if(details) details.classList.toggle('hidden'); }}>✏️</button>
                         {(()=>{ const url = resolveReceiptUrl(e); return url? (
                           <button className="btn-outline px-2 py-1 text-xs" onClick={()=> window.open(url,'_blank')}>View</button>
                         ): (<button className="btn-outline px-2 py-1 text-xs" disabled>View</button>); })()}
                         <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete receipt?')) return; await authFetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); await load(); }}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {expenses.filter(e=> e.show_id===showId && e.category==='show_cost').map(e=> (
+                  <tr key={`edit-${e.id}`} id={`edit-${e.id}`} className="hidden">
+                    <td colSpan={5}>
+                      <div className="p-3 border rounded-xl grid md:grid-cols-4 gap-2">
+                        <input className="input" defaultValue={e.notes||e.merchant} placeholder="Description" onBlur={(ev:any)=> (e.notes = ev.target.value)} />
+                        <input className="input" type="number" defaultValue={e.total} placeholder="Amount" onBlur={(ev:any)=> (e.total = ev.target.value)} />
+                        <div>
+                          <input id={`edit-file-${e.id}`} className="file-input" type="file" accept="image/*,application/pdf" onChange={async(ev:any)=>{ const f=ev.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=async()=>{ const b64=String(r.result); const fr=await authFetch(`${API}/api/files`,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: b64, content_type: f.type||'application/octet-stream' })}); const j=await fr.json(); e.file_id=j.id; e.file_url=j.url; }; r.readAsDataURL(f); }} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button className="btn-primary" onClick={async()=>{ await authFetch(`${API}/api/expenses/${e.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ notes: e.notes||e.merchant, total: e.total, file_id: e.file_id, file_url: e.file_url }) }); (document.getElementById(`edit-${e.id}`) as HTMLTableRowElement).classList.add('hidden'); await load(); }}>Save</button>
+                          <button className="btn-outline" onClick={()=> (document.getElementById(`edit-${e.id}`) as HTMLTableRowElement).classList.add('hidden')}>Cancel</button>
+                        </div>
                       </div>
                     </td>
                   </tr>
