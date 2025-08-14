@@ -166,8 +166,8 @@ function ShowCard({ show, onEdit }: { show:any; onEdit:(s:any)=>void }){
 
   async function onCostFile(e:any){ const f=e.target.files?.[0]; if(!f) return; const b=await fileToBase64(f); setCostForm(prev=>({...prev,fileData:b})); }
   async function addCost(){
-    let file_id; if(costForm.fileData){ const fr=await authFetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: costForm.fileData, content_type: 'image/jpeg' })}); const fj=await fr.json(); file_id=fj.id; }
-    await authFetch(`${API}/api/shows/${show.id}/costs`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type: costForm.type, description: costForm.description, amount: parseFloat(costForm.amount||'0'), file_id }) });
+    let file_id; let file_url; if(costForm.fileData){ const fr=await authFetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: costForm.fileData, content_type: 'image/jpeg' })}); const fj=await fr.json(); file_id=fj.id; file_url=fj.url; }
+    await authFetch(`${API}/api/shows/${show.id}/costs`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type: costForm.type, description: costForm.description, amount: parseFloat(costForm.amount||'0'), file_id, file_url }) });
     setCostForm({ type:'Registration', description:'', amount:'', fileData:'' });
     load();
   }
