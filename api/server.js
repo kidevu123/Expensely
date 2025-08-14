@@ -536,8 +536,9 @@ app.delete('/api/shows/:id/costs/:cid', (req,res)=>{
 });
 
 // Expenses
-app.post('/api/expenses', (req, res) => {
-  const { show_id, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id, file_url, is_daily, last4 } = req.body || {};
+app.post('/api/expenses', async (req, res) => {
+  const { show_id, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id, is_daily, last4 } = req.body || {};
+  let { file_url } = req.body || {};
   if(!is_daily && !show_id) return res.status(400).json({ error:'show_id required unless is_daily' });
   // Block submissions to closed shows at the API layer
   if(!is_daily && show_id){
@@ -546,6 +547,13 @@ app.post('/api/expenses', (req, res) => {
       return res.status(403).json({ error: 'submissions closed for this show' });
     }
   }
+  // Fallback: if we received a file_id but no file_url, make a public link now
+  try{
+    if(file_id && !file_url){
+      const url = await createPublicLink(file_id);
+      if(url) file_url = url;
+    }
+  } catch {}
   let org_label = null;
   const last4clean = (last4||'').toString().replace(/\D/g,'').slice(-4);
   if(last4clean && memory.cardMap[last4clean]) org_label = memory.cardMap[last4clean];
