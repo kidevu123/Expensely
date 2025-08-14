@@ -1,7 +1,13 @@
 "use client";
 import { useState } from 'react';
 import { setUser, User } from '../../lib/auth';
-const API = process.env.NEXT_PUBLIC_API_BASE_URL as string;
+
+function getApiBase(): string {
+	const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string) || '';
+	if (fromEnv && /^https?:\/\//.test(fromEnv)) return fromEnv.replace(/\/$/, '');
+	if (typeof window !== 'undefined') return window.location.origin.replace(/\/$/, '');
+	return '';
+}
 
 export default function Login(){
   const [email, setEmail] = useState('');
@@ -11,10 +17,11 @@ export default function Login(){
 
   async function submit(e:any){ e.preventDefault(); setBusy(true);
     try{
-      const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email||undefined, username: username||undefined, password }) });
+      const base = getApiBase();
+      const r = await fetch(`${base}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email||undefined, username: username||undefined, password }) });
       const j = await r.json().catch(()=>({ error:'Network error' })); setBusy(false);
       if(r.ok){ setUser(j.user as User); window.location.href = '/'; } else { alert(j.error||'Login failed'); }
-    } catch {
+    } catch (err:any) {
       setBusy(false); alert('Network error. Please check connectivity.');
     }
   }
