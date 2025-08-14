@@ -178,7 +178,7 @@ export default function ShowDetail({ params }: { params: { id: string } }){
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
                         {(()=>{ const url = resolveReceiptUrl(e); return url? (
-                          <a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>
+                          <button className="btn-outline px-2 py-1 text-xs" onClick={()=> window.open(url,'_blank')}>View</button>
                         ): (<button className="btn-outline px-2 py-1 text-xs" disabled>View</button>); })()}
                         <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete receipt?')) return; await authFetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); await load(); }}>Delete</button>
                       </div>

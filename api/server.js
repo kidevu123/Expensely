@@ -465,11 +465,13 @@ app.post('/api/files', async (req,res)=>{
 
     // Upload to Zoho WorkDrive
     // Save a local mirror always
-    try { const localName = `local-${Date.now()}${ext}`; fs.writeFileSync(path.join(DATA_DIR, localName), buf); } catch {}
+    let localName = '';
+    try { localName = `local-${Date.now()}${ext}`; fs.writeFileSync(path.join(DATA_DIR, localName), buf); } catch {}
     const { receiptsFolderId } = await ensureTeamAndFolders();
     const fileId = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
     const url = await createPublicLink(fileId);
-    res.json({ id: fileId, url });
+    const finalUrl = url || (localName? `/files/${localName}`:'');
+    res.json({ id: fileId, url: finalUrl });
   } catch (e){
     console.error('WorkDrive upload error', e);
     res.status(500).json({ error:'upload failed' });
