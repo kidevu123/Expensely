@@ -11,7 +11,7 @@ import { execFile } from 'child_process';
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '20mb' }));
 
 // Local file storage (persist receipts)
 const DATA_DIR = process.env.DATA_DIR || '/data';
@@ -479,6 +479,9 @@ app.get('/api/files/:id', async (req,res)=>{
   try {
     const url = await createPublicLink(req.params.id);
     if (url) return res.redirect(url);
+    // Fallback: if this looks like a locally stored file, serve it directly
+    const localPath = path.join(DATA_DIR, req.params.id);
+    if (fs.existsSync(localPath)) return res.redirect(`/files/${encodeURIComponent(req.params.id)}`);
     return res.status(404).json({ error:'not found' });
   } catch (e) {
     console.error('files redirect error', e);
@@ -555,9 +558,24 @@ app.post('/api/expenses', async (req, res) => {
       const buf = Buffer.from(cleaned, 'base64');
       const ext = (content_type||'').includes('png')? '.png' : (content_type||'').includes('pdf')? '.pdf' : '.jpg';
       const filename = `receipt-${Date.now()}${ext}`;
-      const { receiptsFolderId } = await ensureTeamAndFolders();
-      file_id = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
-      try { const url = await createPublicLink(file_id); if(url) file_url = url; } catch {}
+      try {
+        // Primary path: upload to Zoho WorkDrive
+        const { receiptsFolderId } = await ensureTeamAndFolders();
+        file_id = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
+        try { const url = await createPublicLink(file_id); if(url) file_url = url; } catch {}
+      } catch (zerr) {
+        // Robust fallback: persist locally so the receipt is still viewable
+        try {
+          const localName = `local-${Date.now()}${ext}`;
+          const p = path.join(DATA_DIR, localName);
+          fs.writeFileSync(p, buf);
+          file_id = localName;
+          file_url = `/files/${localName}`;
+          console.error('WorkDrive upload failed, saved locally instead:', zerr?.message || zerr);
+        } catch (diskErr) {
+          console.error('inline upload failed and local save failed', diskErr);
+        }
+      }
     }
   } catch (e) {
     console.error('inline upload failed', e);
