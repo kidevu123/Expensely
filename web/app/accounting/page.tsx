@@ -164,7 +164,7 @@ export default function Accounting(){
                        <div className="flex justify-end gap-2 whitespace-nowrap">
                          {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
                            if(url){
-                             return (<a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>);
+                             return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>setPreviewUrl(url)}>View</button>);
                            }
                            return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
                          })()}
@@ -207,8 +207,8 @@ export default function Accounting(){
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
                            <td className="text-right">
                              <div className="flex justify-end gap-2 whitespace-nowrap">
-                               {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
-                                 if(url){ return (<a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>); }
+                                {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
+                                  if(url){ return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>setPreviewUrl(url)}>View</button>); }
                                  return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
                                })()}
                                <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
@@ -266,15 +266,20 @@ export default function Accounting(){
 
       {previewUrl && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" onClick={()=>setPreviewUrl(null)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full p-3" onClick={e=>e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-3" onClick={e=>e.stopPropagation()}>
             <div className="flex justify-between items-center mb-2">
               <div className="font-medium">Receipt preview</div>
               <div className="flex gap-2">
+                <a className="btn-outline" href={previewUrl} target="_blank" rel="noreferrer">Open in new tab</a>
                 <a className="btn-outline" href={previewUrl} download>Download</a>
                 <button className="btn-primary" onClick={()=>setPreviewUrl(null)}>Close</button>
               </div>
             </div>
-            <img src={previewUrl} alt="receipt" className="w-full max-h-[70vh] object-contain rounded-xl bg-slate-50"/>
+            {(/\.pdf(\?|$)/i.test(String(previewUrl)) ? (
+              <iframe src={previewUrl} title="receipt" className="w-full h-[70vh] rounded-xl bg-slate-50" />
+            ) : (
+              <img src={previewUrl} alt="receipt" className="w-full max-h-[70vh] object-contain rounded-xl bg-slate-50"/>
+            ))}
           </div>
         </div>
       )}
