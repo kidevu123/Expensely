@@ -173,7 +173,7 @@ export default function Accounting(){
                     </td>
                      <td className="text-right">
                   <div className="flex justify-end gap-2 whitespace-nowrap">
-                    {(()=>{ return (<button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={async()=>{ const url = await resolveReceiptUrl(e); if(url) setPreviewUrl(url); }}>
+                    {(()=>{ return (<button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={async()=>{ const url = await resolveReceiptUrl(e); if(!url) return; if(/\.pdf(\?|$)/i.test(url) || /\/api\/files\//.test(url)){ window.open(url, '_blank'); } else { setPreviewUrl(url); } }}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                       </button>); })()}
                     <button className="btn-outline px-2 py-1 text-xs" aria-label="Edit" onClick={()=>setEdit(e)}>
@@ -311,7 +311,7 @@ export default function Accounting(){
             </div>
             {(() => {
               const url = String(previewUrl);
-              const boxStyle = { width:'60vw', maxWidth:'900px', height:'60vh', maxHeight:'650px' } as React.CSSProperties;
+              const boxStyle = { width:'50vw', maxWidth:'720px', height:'50vh', maxHeight:'520px' } as React.CSSProperties;
               const contentStyle = { width:'100%', height:'100%', objectFit:'contain' } as React.CSSProperties;
               return (
                 <div className="flex items-center justify-center" style={boxStyle}>
