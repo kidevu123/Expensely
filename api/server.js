@@ -834,7 +834,8 @@ app.patch('/api/feedback/:id', (req,res)=>{
 app.get('/api/reports/show/:id', (req,res)=>{
   const showId = req.params.id;
   const expenses = memory.expenses.filter(e=>e.show_id===showId);
-  const costs = memory.showCosts.filter(c=>c.show_id===showId);
+  const costIdsBacked = new Set(expenses.map(e=> e.cost_id).filter(Boolean));
+  const costs = memory.showCosts.filter(c=> c.show_id===showId && (!c.id || costIdsBacked.has(c.id)));
   const parseNum = (v)=>{ const n = parseFloat(v||0); return Number.isFinite(n)? n: 0; };
   // Exclude mirrored show costs from expense totals to avoid double counting
   const expenseTotalExcludingMirrors = expenses
