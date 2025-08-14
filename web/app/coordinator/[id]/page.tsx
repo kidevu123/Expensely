@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from 'react';
-import { authFetch } from '../../../lib/auth';
+import { authFetch, getUser } from '../../../lib/auth';
+import Tesseract from 'tesseract.js';
 
 function getApiBase(): string {
   const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string) || '';
@@ -16,11 +17,13 @@ export default function ShowDetail({ params }: { params: { id: string } }){
   const [show, setShow] = useState<any|null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [costs, setCosts] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [newParticipant, setNewParticipant] = useState<{ user_id: string, airline?: string, flight_conf?: string, hotel_conf?: string, car_conf?: string }>({ user_id: '' });
   const [newCost, setNewCost] = useState<{ type: string, description: string, amount: number|string, file?: File|null }>({ type:'', description:'', amount:'', file:null });
   const [hotelOpen, setHotelOpen] = useState<Record<string, boolean>>({});
   const [carOpen, setCarOpen] = useState<Record<string, boolean>>({});
+  const [busyOCR, setBusyOCR] = useState(false);
 
   async function load(){
     const s = await (await authFetch(`${API}/api/shows`)).json();
@@ -29,6 +32,8 @@ export default function ShowDetail({ params }: { params: { id: string } }){
     setParticipants(p||[]);
     const c = await (await authFetch(`${API}/api/shows/${showId}/costs`)).json();
     setCosts(c||[]);
+    const ex = await (await authFetch(`${API}/api/expenses?show_id=${showId}`)).json();
+    setExpenses(ex||[]);
     const users = await (await authFetch(`${API}/api/users`)).json();
     setAllUsers(users||[]);
   }
@@ -36,6 +41,25 @@ export default function ShowDetail({ params }: { params: { id: string } }){
   useEffect(()=>{ setMounted(true); load(); },[]);
   if(!mounted) return null;
   if(!show) return (<main className="p-6 max-w-5xl mx-auto"><h2 className="text-2xl font-medium mb-4">Show</h2><p>Not found.</p></main>);
+
+  function resolveReceiptUrl(e:any){
+    const direct = e.file_url || '';
+    if(direct){ if(/^https?:\/\//i.test(direct)) return direct; if(direct.startsWith('/files/')){ const id = direct.split('/').pop(); return id? `${API}/api/files/${id}`: ''; } }
+    return e.file_id? `${API}/api/files/${e.file_id}`: '';
+  }
+
+  async function runCostOCR(file: File){
+    try{
+      setBusyOCR(true);
+      const { data } = await Tesseract.recognize(file, 'eng');
+      const text = data.text || '';
+      // very lightweight parsing: last number with 2 decimals as amount
+      const m = text.match(/(\d{1,4}(?:,\d{3})*(?:\.\d{2}))/g);
+      const amt = m? m[m.length-1]: '';
+      const firstLine = (text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean)[0]||'').slice(0,80);
+      setNewCost(v=>({ ...v, description: v.description||firstLine||'', amount: v.amount||amt }));
+    }finally{ setBusyOCR(false); }
+  }
 
   return (
     <main className="p-6 max-w-5xl mx-auto">
@@ -111,7 +135,7 @@ export default function ShowDetail({ params }: { params: { id: string } }){
             <input className="input" placeholder="Type (e.g., Booth, Electrical, Utilities)" value={newCost.type} onChange={e=>setNewCost(v=>({ ...v, type: e.target.value }))} />
             <input className="input md:col-span-2" placeholder="Description" value={newCost.description} onChange={e=>setNewCost(v=>({ ...v, description: e.target.value }))} />
             <input className="input" placeholder="Amount" type="number" value={newCost.amount} onChange={e=>setNewCost(v=>({ ...v, amount: e.target.value }))} />
-            <input className="file-input" type="file" accept="image/*,application/pdf" onChange={e=> setNewCost(v=>({ ...v, file: e.target.files?.[0]||null }))} />
+            <input className="file-input" type="file" accept="image/*,application/pdf" onChange={async e=> { const f=e.target.files?.[0]||null; setNewCost(v=>({ ...v, file: f })); if(f) await runCostOCR(f); }} />
             <button className="btn-primary" onClick={async()=>{
               if(!newCost.type || !newCost.amount) return alert('Type and amount required');
               let file_id: string|undefined = undefined;
@@ -135,6 +159,38 @@ export default function ShowDetail({ params }: { params: { id: string } }){
             ))}
             {costs.length===0 && (<li className="text-slate-500">No costs yet</li>)}
           </ul>
+          {busyOCR && <div className="text-xs text-slate-500 mt-1">Scanning receipt…</div>}
+        </div>
+
+        {/* Mirrored expenses uploaded by coordinator (show-only) */}
+        <div className="card w-full">
+          <h3 className="font-medium mb-2">Uploaded receipts</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-slate-500"><tr><th className="text-left py-2">Description</th><th className="text-left">Category</th><th className="text-left">Paid by</th><th className="text-right">Amount</th><th className="text-right w-[160px]">Actions</th></tr></thead>
+              <tbody>
+                {expenses.filter(e=> e.show_id===showId && e.category==='show_cost').map(e=> (
+                  <tr key={e.id} className="border-t">
+                    <td className="py-2">{e.notes||e.merchant}</td>
+                    <td>{e.category||'—'}</td>
+                    <td>{e.org_label||'Unassigned'}</td>
+                    <td className="text-right">${e.total}</td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {(()=>{ const url = resolveReceiptUrl(e); return url? (
+                          <a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>
+                        ): (<button className="btn-outline px-2 py-1 text-xs" disabled>View</button>); })()}
+                        <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete receipt?')) return; await authFetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); await load(); }}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {expenses.filter(e=> e.show_id===showId && e.category==='show_cost').length===0 && (
+                  <tr><td className="py-2 text-slate-500" colSpan={5}>No uploads yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </main>
