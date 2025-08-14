@@ -271,9 +271,26 @@ export default function Accounting(){
               <input className="input" placeholder="Tax" defaultValue={edit.tax||''} onBlur={e=>edit.tax=e.target.value} />
               <input className="input" placeholder="Tip" defaultValue={edit.tip||''} onBlur={e=>edit.tip=e.target.value} />
               <input className="input" placeholder="Total" defaultValue={edit.total||''} onBlur={e=>edit.total=e.target.value} />
+              <div className="col-span-2">
+                <label className="text-sm text-slate-600">Attach/replace receipt</label>
+                <input id="edit-file" className="file-input" type="file" accept="image/*,application/pdf" />
+              </div>
             </div>
             <div className="mt-3 flex gap-2">
-              <button className="btn-primary" onClick={async()=>{ await fetch(`${API}/api/expenses/${edit.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(edit) }); setEdit(null); const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); setExpenses(e); }}>Save</button>
+              <button className="btn-primary" onClick={async()=>{
+                let payload:any = { ...edit };
+                const inp = document.getElementById('edit-file') as HTMLInputElement | null;
+                const f = inp?.files?.[0];
+                if(f){
+                  const b64 = await new Promise<string>((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(String(r.result)); r.onerror=reject; r.readAsDataURL(f); });
+                  const fr = await fetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: b64, content_type: f.type||'application/octet-stream' }) });
+                  const fj = await fr.json();
+                  if(fj){ payload.file_id = fj.id; payload.file_url = fj.url; }
+                }
+                await fetch(`${API}/api/expenses/${edit.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                setEdit(null);
+                const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); setExpenses(e);
+              }}>Save</button>
               <button className="btn-outline" onClick={()=>setEdit(null)}>Cancel</button>
             </div>
           </div>
