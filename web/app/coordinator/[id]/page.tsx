@@ -2,7 +2,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { authFetch } from '../../../lib/auth';
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL as string;
+function getApiBase(): string {
+  const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string) || '';
+  if (fromEnv && /^https?:\/\//.test(fromEnv)) return fromEnv.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return window.location.origin.replace(/\/$/, '');
+  return '';
+}
+const API = getApiBase();
 
 export default function ShowDetail({ params }: { params: { id: string } }){
   const showId = params.id;

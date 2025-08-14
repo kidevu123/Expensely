@@ -730,14 +730,17 @@ app.get('/api/reports/show/:id', (req,res)=>{
   const expenses = memory.expenses.filter(e=>e.show_id===showId);
   const costs = memory.showCosts.filter(c=>c.show_id===showId);
   const parseNum = (v)=>{ const n = parseFloat(v||0); return Number.isFinite(n)? n: 0; };
-  const totalExpenses = expenses.reduce((a,e)=> a + parseNum(e.total), 0);
+  // Exclude mirrored show costs from expense totals to avoid double counting
+  const expenseTotalExcludingMirrors = expenses
+    .filter(e => !e.cost_id)
+    .reduce((a,e)=> a + parseNum(e.total), 0);
   const totalCosts = costs.reduce((a,c)=> a + parseNum(c.amount), 0);
-  const overall = +(totalExpenses + totalCosts).toFixed(2);
+  const overall = +(expenseTotalExcludingMirrors + totalCosts).toFixed(2);
   const byOrg = {};
   for(const e of expenses){ const k=e.org_label||'Unassigned'; byOrg[k]=(byOrg[k]||0)+parseNum(e.total); }
   const byCategory = {};
   for(const e of expenses){ const k=e.category||'Uncategorized'; byCategory[k]=(byCategory[k]||0)+parseNum(e.total); }
-  const response = { show_id: showId, overall, total_expenses:+totalExpenses.toFixed(2), total_show_costs:+totalCosts.toFixed(2), by_org: byOrg, by_category: byCategory, counts: { expenses: expenses.length, costs: costs.length } };
+  const response = { show_id: showId, overall, total_expenses:+expenseTotalExcludingMirrors.toFixed(2), total_show_costs:+totalCosts.toFixed(2), by_org: byOrg, by_category: byCategory, counts: { expenses: expenses.length, costs: costs.length } };
   res.json(response);
 });
 

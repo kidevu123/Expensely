@@ -1,6 +1,12 @@
 "use client";
 import { useEffect, useState } from 'react';
-const API = process.env.NEXT_PUBLIC_API_BASE_URL as string;
+function getApiBase(): string {
+  const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string) || '';
+  if (fromEnv && /^https?:\/\//.test(fromEnv)) return fromEnv.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return window.location.origin.replace(/\/$/, '');
+  return '';
+}
+const API = getApiBase();
 import { getUser } from '../../lib/auth';
 
 type User = { id:string; email:string; name:string; role:'admin'|'coordinator'|'accountant'|'attendee'; phone_e164?: string; allow_daily_expenses?: boolean; permissions?: string[] };
@@ -37,7 +43,7 @@ export default function Admin(){
     if(form.avatar_file){
       const fr = await fetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: form.avatar_file, content_type: 'image/jpeg' }) });
       const fj = await fr.json();
-      avatar_url = `${API}/files/${fj.id}`.replace(/\/$/, '')
+      avatar_url = fj.url || '';
     }
     const payload:any = { email:form.email, name:form.name, role:form.role, password:form.password, phone:form.phone, avatar_url, permissions: Array.isArray(form.permissions)? form.permissions: [], allow_daily_expenses: !!(form as any).daily };
     const r = await fetch(`${API}/api/users`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
@@ -70,7 +76,7 @@ export default function Admin(){
               <tr key={t.id} className="border-t">
                 <td className="py-2 pr-2 text-xs text-slate-600">{t.created_by}</td>
                 <td className="py-2 pr-2 truncate max-w-[360px]">{t.note}</td>
-                <td className="py-2 pr-2">{t.file_id? (<a className="underline" href={`${API}/files/${t.file_id}`} target="_blank">view</a>): '-'}</td>
+                 <td className="py-2 pr-2">{t.file_id? (<a className="underline" href={`${API}/api/files/${t.file_id}`} target="_blank">view</a>): '-'}</td>
                 <td className="py-2 pr-2">{t.status}</td>
                 <td className="py-2 text-right">
                   {t.status==='open'? (
