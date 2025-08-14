@@ -622,6 +622,22 @@ app.get('/api/admin/audit', (req,res)=>{
   const limit = parseInt(String(req.query.limit||'200')); res.json(memory.audit.slice(-limit).reverse());
 });
 
+// One-time repair: backfill missing receipt links on expenses from their mirrored show costs
+app.post('/api/admin/backfill-file-links', (req,res)=>{
+  let updated = 0;
+  for(const e of memory.expenses){
+    if(e.cost_id && (!e.file_id || !e.file_url)){
+      const c = memory.showCosts.find(x=> x.id === e.cost_id);
+      if(c && (c.file_id || c.file_url)){
+        if(!e.file_id && c.file_id) e.file_id = c.file_id;
+        if(!e.file_url && c.file_url) e.file_url = c.file_url;
+        updated++;
+      }
+    }
+  }
+  if(updated){ saveTo(EXPENSES_PATH, memory.expenses); audit(req,'repair','expense_links','-',{ updated }); }
+  res.json({ ok:true, updated });
+});
 // ====== Daily JSON backup to Zoho WorkDrive ======
 const BACKUP_INTERVAL_HOURS = parseInt(process.env.BACKUP_INTERVAL_HOURS || '24', 10);
 function makeTarGz(srcDir, outPath){

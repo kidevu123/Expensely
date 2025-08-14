@@ -193,7 +193,7 @@ export default function Accounting(){
                           <td>{e.created_by||'—'}</td>
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
                            <td className="text-right space-x-2">
-                             {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
+                       {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
                                <a className={`btn-outline px-2 py-1 text-xs ${url? '':'opacity-50 cursor-not-allowed'}`} href={url||'#'} target={url? '_blank': undefined} rel={url? 'noreferrer': undefined} aria-disabled={!url} onClick={(ev)=>{ if(!url){ ev.preventDefault(); } }}>
                                  View
                                </a>
