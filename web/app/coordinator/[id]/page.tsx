@@ -150,21 +150,12 @@ export default function ShowDetail({ params }: { params: { id: string } }){
               await load();
             }}>Add</button>
           </div>
-           <ul className="text-sm">
-            {costs.map((c:any)=> (
-              <li key={c.id} className="border-b py-1 flex justify-between items-center">
-                <span>{c.type}: {c.description}</span>
-                <span className="flex items-center gap-2">${c.amount} <button className="btn-outline px-2 py-1 text-xs" onClick={async()=>{ await authFetch(`${API}/api/shows/${showId}/costs/${c.id}`, { method:'DELETE' }); await load(); }}>Remove</button></span>
-              </li>
-            ))}
-            {costs.length===0 && (<li className="text-slate-500">No costs yet</li>)}
-          </ul>
           {busyOCR && <div className="text-xs text-slate-500 mt-1">Scanning receipt…</div>}
         </div>
 
         {/* Mirrored expenses uploaded by coordinator (show-only) */}
         <div className="card w-full">
-          <h3 className="font-medium mb-2">Uploaded receipts</h3>
+          <h3 className="font-medium mb-2">Show expense breakdown</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-slate-500"><tr><th className="text-left py-2">Description</th><th className="text-left">Category</th><th className="text-left">Paid by</th><th className="text-right">Amount</th><th className="text-right w-[160px]">Actions</th></tr></thead>
