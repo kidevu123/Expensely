@@ -70,27 +70,14 @@ export default function Accounting(){
     const all = await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all);
   })(); },[showId]);
 
-  async function attachReceiptToExpense(exp:any){
-    return new Promise<void>((resolve)=>{
-      const picker = document.createElement('input');
-      picker.type = 'file';
-      picker.accept = 'image/*,application/pdf';
-      picker.onchange = async ()=>{
-        try{
-          const file = picker.files?.[0]; if(!file) return resolve();
-          const readAsB64 = (f:File)=> new Promise<string>((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result)); r.onerror=rej; r.readAsDataURL(f); });
-          const b64 = await readAsB64(file);
-          const fr = await fetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: b64, content_type: file.type||'image/jpeg' }) });
-          const fj = await fr.json();
-          await fetch(`${API}/api/expenses/${exp.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ file_id: fj.id, file_url: fj.url }) });
-          // refresh lists
-          const all = await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all);
-          const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e,...d]));
-        } catch {}
-        resolve();
-      };
-      picker.click();
-    });
+  async function linkReceiptToExpense(exp:any){
+    const url = prompt('Paste the receipt URL from WorkDrive');
+    if(!url) return;
+    try{
+      await fetch(`${API}/api/expenses/${exp.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ file_url: url }) });
+      const all = await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all);
+      const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e,...d]));
+    } catch {}
   }
 
   const u = getUser();
@@ -179,7 +166,7 @@ export default function Accounting(){
                            if(url){
                              return (<a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>);
                            }
-                           return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>attachReceiptToExpense(e)}>Attach</button>);
+                           return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
                          })()}
                          <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
                          <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e1, ...d1])); }}>Delete</button>
@@ -222,7 +209,7 @@ export default function Accounting(){
                              <div className="flex justify-end gap-2 whitespace-nowrap">
                                {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
                                  if(url){ return (<a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>); }
-                                 return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>attachReceiptToExpense(e)}>Attach</button>);
+                                 return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
                                })()}
                                <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
                                <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>Delete</button>
