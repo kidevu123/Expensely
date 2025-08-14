@@ -137,7 +137,7 @@ export default function Accounting(){
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-slate-500"><tr><th className="text-left py-2 w-8"></th><th className="text-left py-2">Merchant</th><th className="text-left">Amount</th><th className="text-left">Category</th><th className="text-left">Card</th><th className="text-left">Uploader</th><th className="text-left">Type</th><th></th></tr></thead>
+              <thead className="text-slate-500"><tr><th className="text-left py-2 w-8"></th><th className="text-left py-2">Merchant</th><th className="text-left">Amount</th><th className="text-left">Category</th><th className="text-left">Card</th><th className="text-left">Uploader</th><th className="text-left">Type</th><th className="text-right w-[220px]">Actions</th></tr></thead>
               <tbody>
                 {uniqueById(allExpenses.filter(e=>e.status==='unassigned')).map(e=> (
                   <tr key={e.id} className="border-t">
@@ -150,14 +150,16 @@ export default function Accounting(){
                     <td>
                       {(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}
                     </td>
-                     <td className="text-right space-x-2">
-                       {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return url? (
-                         <a className="btn-outline px-2 py-1 text-xs" href={url} target="_blank" rel="noreferrer">View</a>
-                       ) : (
-                         <button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt attached">View</button>
-                       ); })()}
-                       <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
-                       <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e1, ...d1])); }}>Delete</button>
+                     <td className="text-right">
+                       <div className="flex justify-end gap-2 whitespace-nowrap">
+                         {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
+                           <a className={`btn-outline px-2 py-1 text-xs ${url? '':'opacity-50 cursor-not-allowed'}`} href={url||'#'} target={url? '_blank': undefined} rel={url? 'noreferrer': undefined} aria-disabled={!url} onClick={(ev)=>{ if(!url){ ev.preventDefault(); } }}>
+                             View
+                           </a>
+                         ); })()}
+                         <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
+                         <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses(uniqueById([...e1, ...d1])); }}>Delete</button>
+                       </div>
                      </td>
                   </tr>
                 ))}
@@ -181,7 +183,7 @@ export default function Accounting(){
               <div className="company-body mt-2 hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-slate-500"><tr><th className="text-left py-2 w-8"></th><th className="text-left py-2">Merchant</th><th className="text-left">Amount</th><th className="text-left">Category</th><th className="text-left">Card</th><th className="text-left">Uploader</th><th className="text-left">Type</th><th></th></tr></thead>
+                     <thead className="text-slate-500"><tr><th className="text-left py-2 w-8"></th><th className="text-left py-2">Merchant</th><th className="text-left">Amount</th><th className="text-left">Category</th><th className="text-left">Card</th><th className="text-left">Uploader</th><th className="text-left">Type</th><th className="text-right w-[220px]">Actions</th></tr></thead>
                     <tbody>
                       {expenses.filter(e=>e.status==='assigned' && e.org_label===o.label).map(e=> (
                         <tr key={e.id} className="border-t">
@@ -192,14 +194,16 @@ export default function Accounting(){
                           <td>{e.last4? `**** ${e.last4}`:''}</td>
                           <td>{e.created_by||'—'}</td>
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
-                           <td className="text-right space-x-2">
-                       {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
-                               <a className={`btn-outline px-2 py-1 text-xs ${url? '':'opacity-50 cursor-not-allowed'}`} href={url||'#'} target={url? '_blank': undefined} rel={url? 'noreferrer': undefined} aria-disabled={!url} onClick={(ev)=>{ if(!url){ ev.preventDefault(); } }}>
-                                 View
-                               </a>
-                             ); })()}
-                             <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
-                             <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>Delete</button>
+                           <td className="text-right">
+                             <div className="flex justify-end gap-2 whitespace-nowrap">
+                               {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
+                                 <a className={`btn-outline px-2 py-1 text-xs ${url? '':'opacity-50 cursor-not-allowed'}`} href={url||'#'} target={url? '_blank': undefined} rel={url? 'noreferrer': undefined} aria-disabled={!url} onClick={(ev)=>{ if(!url){ ev.preventDefault(); } }}>
+                                   View
+                                 </a>
+                               ); })()}
+                               <button className="btn-outline px-2 py-1 text-xs" onClick={()=>setEdit(e)}>Edit</button>
+                               <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete expense?')) return; await fetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all); const e1=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d1=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e1, ...d1]); }}>Delete</button>
+                             </div>
                            </td>
                         </tr>
                       ))}
