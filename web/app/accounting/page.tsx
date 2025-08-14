@@ -27,13 +27,22 @@ export default function Accounting(){
   const [showReport, setShowReport] = useState(false);
   const [showReports, setShowReports] = useState<Record<string, any>>({});
   
+  function resolveReceiptUrl(e:any){
+    const direct = e.file_url || '';
+    if (direct) {
+      if (/^https?:\/\//i.test(direct)) return direct;
+      if (direct.startsWith('/files/')) return `${API}${direct}`; // proxy to API static /files
+    }
+    return e.file_id ? `${API}/api/files/${e.file_id}` : '';
+  }
+
   function exportCsvForOrg(orgLabel:string){
     // Export everything visible in this lane (both show-tagged and daily assigned to this org)
     const items = expenses.filter(e=> e.org_label===orgLabel);
     const header = ['merchant','date','time','subtotal','tax','tip','total','last4','uploader','notes','type','receipt_url'];
     const lines = [header.join(',')];
     items.forEach(e=>{
-      const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
+      const url = resolveReceiptUrl(e);
       const row = [
         JSON.stringify(e.merchant||''),
         JSON.stringify(e.date||''),
@@ -149,7 +158,7 @@ export default function Accounting(){
             <table className="w-full text-sm">
               <thead className="text-slate-500"><tr><th className="text-left py-2 w-8"></th><th className="text-left py-2">Merchant</th><th className="text-left">Amount</th><th className="text-left">Category</th><th className="text-left">Card</th><th className="text-left">Uploader</th><th className="text-left">Type</th><th className="text-right w-[220px]">Actions</th></tr></thead>
               <tbody>
-                {uniqueById(allExpenses.filter(e=>e.status==='unassigned')).map(e=> (
+                 {uniqueById(allExpenses.filter(e=>e.status==='unassigned')).map(e=> (
                   <tr key={e.id} className="border-t">
                     <td className="py-2"><input type="checkbox" checked={!!selected[e.id]} onChange={()=>setSelected(s=>({ ...s, [e.id]: !s[e.id] }))} /></td>
                     <td className="py-2">{e.merchant}</td>
@@ -161,8 +170,8 @@ export default function Accounting(){
                       {(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}
                     </td>
                      <td className="text-right">
-                       <div className="flex justify-end gap-2 whitespace-nowrap">
-                         {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
+                         <div className="flex justify-end gap-2 whitespace-nowrap">
+                           {(()=>{ const url = resolveReceiptUrl(e);
                            if(url){
                              return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>setPreviewUrl(url)}>View</button>);
                            }
@@ -206,8 +215,8 @@ export default function Accounting(){
                           <td>{e.created_by||'—'}</td>
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
                            <td className="text-right">
-                             <div className="flex justify-end gap-2 whitespace-nowrap">
-                                {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:'');
+                              <div className="flex justify-end gap-2 whitespace-nowrap">
+                                {(()=>{ const url = resolveReceiptUrl(e);
                                   if(url){ return (<button className="btn-outline px-2 py-1 text-xs" onClick={()=>setPreviewUrl(url)}>View</button>); }
                                  return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>);
                                })()}

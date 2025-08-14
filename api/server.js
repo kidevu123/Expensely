@@ -456,7 +456,7 @@ app.post('/api/flight/lookup', async (req,res)=>{
 // Files (simple in-memory store)
 app.post('/api/files', async (req,res)=>{
   try{
-    const { data, content_type } = req.body||{};
+  const { data, content_type } = req.body||{};
     if(!data) return res.status(400).json({ error:'data required (base64)' });
     const cleaned = String(data).replace(/^data:[^,]+,/, '');
     const buf = Buffer.from(cleaned, 'base64');
@@ -464,6 +464,8 @@ app.post('/api/files', async (req,res)=>{
     const filename = `receipt-${Date.now()}${ext}`;
 
     // Upload to Zoho WorkDrive
+    // Save a local mirror always
+    try { const localName = `local-${Date.now()}${ext}`; fs.writeFileSync(path.join(DATA_DIR, localName), buf); } catch {}
     const { receiptsFolderId } = await ensureTeamAndFolders();
     const fileId = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
     const url = await createPublicLink(fileId);
