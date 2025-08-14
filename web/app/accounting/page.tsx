@@ -312,9 +312,9 @@ export default function Accounting(){
             {(() => {
               const url = String(previewUrl);
               if (/\.pdf(\?|$)/i.test(url) || /\/api\/files\//.test(url)) {
-                return (<iframe src={url} title="receipt" className="w-full h-[70vh] rounded-xl bg-slate-50" />);
+                return (<iframe src={url} title="receipt" className="rounded-xl bg-slate-50" style={{ maxWidth:'90vw', maxHeight:'75vh', width:'90vw', height:'75vh' }} />);
               }
-              return (<img src={url} alt="receipt" className="w-full h-[70vh] object-contain rounded-xl bg-slate-50"/>);
+              return (<img src={url} alt="receipt" className="rounded-xl bg-slate-50 mx-auto" style={{ maxWidth:'90vw', maxHeight:'75vh', width:'auto', height:'auto' }} />);
             })()}
           </div>
         </div>
