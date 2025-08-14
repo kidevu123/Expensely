@@ -311,12 +311,14 @@ export default function Accounting(){
             </div>
             {(() => {
               const url = String(previewUrl);
+              const boxStyle = { width:'90vw', maxWidth:'1200px', height:'75vh', maxHeight:'850px' } as React.CSSProperties;
+              const contentStyle = { width:'100%', height:'100%', objectFit:'contain' } as React.CSSProperties;
               return (
-                <div className="flex items-center justify-center" style={{ width:'90vw', height:'75vh' }}>
+                <div className="flex items-center justify-center" style={boxStyle}>
                   {(/\.pdf(\?|$)/i.test(url) || /\/api\/files\//.test(url)) ? (
-                    <iframe src={url} title="receipt" style={{ width:'100%', height:'100%' }} className="rounded-xl bg-slate-50" />
+                    <iframe src={url} title="receipt" style={contentStyle} className="rounded-xl bg-slate-50" />
                   ) : (
-                    <img src={url} alt="receipt" style={{ maxWidth:'100%', maxHeight:'100%', width:'auto', height:'auto' }} className="rounded-xl bg-slate-50" />
+                    <img src={url} alt="receipt" style={contentStyle} className="rounded-xl bg-slate-50" />
                   )}
                 </div>
               );
