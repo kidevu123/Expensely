@@ -11,7 +11,9 @@ export default function FeedbackButton(){
 
   async function submit(e:any){
     e.preventDefault(); if(!note.trim()) return alert('Please enter a note'); setBusy(true);
-    const r = await authFetch(`${API}/api/feedback`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ note, file_data: fileData }) });
+    let contentType = '';
+    if (fileData.startsWith('data:')){ const m=fileData.match(/^data:([^;]+)/); if(m) contentType = m[1]; }
+    const r = await authFetch(`${API}/api/feedback`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ note, file_data: fileData||undefined, content_type: contentType||undefined }) });
     setBusy(false);
     if(!r.ok){ const j=await r.json().catch(()=>({error:'Error'})); alert(j.error||'Error'); return; }
     setNote(''); setFileData(''); setOpen(false); alert('Thanks! Feedback submitted.');

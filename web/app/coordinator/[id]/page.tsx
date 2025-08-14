@@ -174,6 +174,7 @@ export default function ShowDetail({ params }: { params: { id: string } }){
                     <td className="text-right">${e.total}</td>
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
+                        <button className="btn-outline px-2 py-1 text-xs" onClick={()=>{ const details=(document.getElementById(`row-${e.id}`) as HTMLTableRowElement).nextElementSibling as HTMLTableRowElement; if(details) details.classList.toggle('hidden'); }}>✏️</button>
                         {(()=>{ const url = resolveReceiptUrl(e); return url? (
                           <button className="btn-outline px-2 py-1 text-xs" onClick={()=> window.open(url,'_blank')}>View</button>
                         ): (<button className="btn-outline px-2 py-1 text-xs" disabled>View</button>); })()}
