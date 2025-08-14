@@ -311,7 +311,7 @@ export default function Accounting(){
             </div>
             {(() => {
               const url = String(previewUrl);
-              const boxStyle = { width:'90vw', maxWidth:'1200px', height:'75vh', maxHeight:'850px' } as React.CSSProperties;
+              const boxStyle = { width:'60vw', maxWidth:'900px', height:'60vh', maxHeight:'650px' } as React.CSSProperties;
               const contentStyle = { width:'100%', height:'100%', objectFit:'contain' } as React.CSSProperties;
               return (
                 <div className="flex items-center justify-center" style={boxStyle}>
