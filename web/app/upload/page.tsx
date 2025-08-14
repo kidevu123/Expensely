@@ -197,10 +197,10 @@ export default function Upload(){
   }
 
   return (
-    <main className="p-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-medium mb-4">Upload receipt</h2>
-      <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
-        <div className="md:col-span-2 grid gap-2 md:grid-cols-3">
+    <main className="p-6 max-w-6xl mx-auto">
+      <h2 className="text-2xl font-medium mb-4">New expense</h2>
+      <form onSubmit={submit} className="grid gap-4 md:grid-cols-3">
+        <div className="md:col-span-3 grid gap-2 md:grid-cols-3">
           <select className="select" value={mode} onChange={e=>setMode(e.target.value as any)}>
             <option value="show" disabled={!hasAnyShow}>Trade show</option>
             <option value="daily" disabled={!(isPrivileged || allowDaily)}>Daily expense</option>
@@ -215,15 +215,24 @@ export default function Upload(){
            <div className="card bg-amber-50 border-amber-200 text-amber-800">Submissions are closed for {selectedShow.name}. Choose another show or switch to Daily.</div>
          )}
          <div className="card">
-           <div>
+           <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 flex items-center justify-center overflow-hidden min-h-[260px] md:min-h-[380px]"
+             onDragOver={e=>e.preventDefault()}
+             onDrop={e=>{ e.preventDefault(); const f=e.dataTransfer.files?.[0]; if(!f) return; setFile(f); runOCR(f); }}>
+             {!fileData ? (
+               <button type="button" className="flex flex-col items-center gap-3 text-slate-600" disabled={mode==='show' && !!selectedShow?.closed} onClick={()=>{ (document.getElementById('upload-file') as HTMLInputElement)?.click(); }}>
+                 <div className="upload-icon">
+                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2"/></svg>
+                 </div>
+                 <div className="text-sm">Tap to upload or drag a receipt (JPG/PDF)</div>
+               </button>
+             ) : (
+               <img alt="receipt preview" src={fileData} className="max-w-[80vw] max-h-[60vh] w-auto h-auto object-contain bg-slate-100 rounded-xl" />
+             )}
              <input id="upload-file" className="file-input" type="file" accept="image/*,application/pdf" disabled={mode==='show' && !!selectedShow?.closed} onChange={e=>{ const f=(e.target as HTMLInputElement).files?.[0]||null; setFile(f); if(f) runOCR(f); }} />
-             <button type="button" className="upload-icon" disabled={mode==='show' && !!selectedShow?.closed} onClick={()=>{ const el=document.getElementById('upload-file') as HTMLInputElement; el?.click(); }}>
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2"/></svg>
-             </button>
            </div>
           {busy && <p className="mt-2 text-sm text-slate-600">Scanning…</p>}
-          {ocrText && <details className="mt-3"><summary className="cursor-pointer text-sm text-slate-600">Show OCR text</summary><pre className="mt-2 text-xs bg-slate-50 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap">{ocrText}</pre></details>}
-          {fileData && <img alt="receipt preview" src={fileData} className="mt-3 w-full rounded-xl max-h-[520px] object-contain bg-slate-100" />}
+           {ocrText && <details className="mt-3"><summary className="cursor-pointer text-sm text-slate-600">Show OCR text</summary><pre className="mt-2 text-xs bg-slate-50 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap">{ocrText}</pre></details>}
+           {/* Preview now rendered inside dropzone; no extra huge image below */}
         </div>
         <div className="card grid gap-2">
           <label className="text-sm text-slate-600">Merchant</label>
