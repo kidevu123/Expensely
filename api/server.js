@@ -496,7 +496,10 @@ app.get('/api/files/:id', async (req,res)=>{
 
 // Show costs
 app.get('/api/shows/:id/costs', (req,res)=>{
-  res.json(memory.showCosts.filter(c=>c.show_id===req.params.id));
+  // Always return costs still backed by an expense (or those manually added)
+  const validExpenseIds = new Set(memory.expenses.filter(e=>e.cost_id).map(e=>e.cost_id));
+  const list = memory.showCosts.filter(c=> c.show_id===req.params.id && (!c.id || validExpenseIds.has(c.id) || !c.id));
+  res.json(list);
 });
 app.post('/api/shows/:id/costs', (req,res)=>{
   const { type, description, amount, file_id, file_url } = req.body||{};
@@ -627,12 +630,29 @@ app.delete('/api/expenses/:id', (req,res)=>{
   const e = memory.expenses[idx];
   memory.expenses.splice(idx,1);
   // If this expense mirrors a coordinator show cost, delete the source cost too
-  if (e && e.cost_id){
-    const before = memory.showCosts.length;
-    memory.showCosts = memory.showCosts.filter(c=> c.id !== e.cost_id);
-    if (memory.showCosts.length !== before){
-      saveTo(COSTS_PATH, memory.showCosts);
-      audit(req,'delete','show_cost',e.cost_id,{ via:'expense_delete' });
+  if (e){
+    if (e.cost_id){
+      const before = memory.showCosts.length;
+      memory.showCosts = memory.showCosts.filter(c=> c.id !== e.cost_id);
+      if (memory.showCosts.length !== before){
+        saveTo(COSTS_PATH, memory.showCosts);
+        audit(req,'delete','show_cost',e.cost_id,{ via:'expense_delete' });
+      }
+    } else {
+      // Fallback: try to locate a matching cost by heuristics (older data might lack cost_id)
+      const match = memory.showCosts.find(c=> (
+        (e.show_id && c.show_id===e.show_id) &&
+        (Number(c.amount)||0) === (Number(e.total)||0) &&
+        (
+          String(c.description||'').trim() === String(e.notes||'').trim() ||
+          String(c.type||'').trim() === String(e.merchant||'').trim()
+        )
+      ));
+      if (match){
+        memory.showCosts = memory.showCosts.filter(c=> c.id !== match.id);
+        saveTo(COSTS_PATH, memory.showCosts);
+        audit(req,'delete','show_cost',match.id,{ via:'expense_delete_heuristic' });
+      }
     }
   }
   saveTo(EXPENSES_PATH, memory.expenses);
