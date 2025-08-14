@@ -27,13 +27,15 @@ export default function Accounting(){
   const [showReport, setShowReport] = useState(false);
   const [showReports, setShowReports] = useState<Record<string, any>>({});
   
-  function resolveReceiptUrl(e:any){
-    const direct = e.file_url || '';
-    if (direct) {
-      if (/^https?:\/\//i.test(direct)) return direct;
-      if (direct.startsWith('/files/')) return `${API}${direct}`;
+  async function resolveReceiptUrl(e:any): Promise<string>{
+    // Standard: prefer API redirect
+    if (e.file_id) return `${API}/api/files/${e.file_id}`;
+    let direct = e.file_url || '';
+    if (!direct && e.cost_id){
+      try{ const c = await (await fetch(`${API}/api/costs/${e.cost_id}`)).json(); if(c){ if(!e.file_id && c.file_id) e.file_id=c.file_id; if(!direct && c.file_url) direct=c.file_url; } } catch {}
     }
-    return e.file_id ? `${API}/api/files/${e.file_id}` : '';
+    if (direct){ if (/^https?:\/\//i.test(direct)) return direct; if (direct.startsWith('/files/')) return `${API}${direct}`; }
+    return e.file_id? `${API}/api/files/${e.file_id}` : '';
   }
 
   function exportCsvForOrg(orgLabel:string){
@@ -171,10 +173,9 @@ export default function Accounting(){
                     </td>
                      <td className="text-right">
                   <div className="flex justify-end gap-2 whitespace-nowrap">
-                    {(()=>{ const url = resolveReceiptUrl(e);
-                      if(url){ return (<button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={()=>setPreviewUrl(url)}>
+                    {(()=>{ return (<button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={async()=>{ const url = await resolveReceiptUrl(e); if(url) setPreviewUrl(url); }}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                      </button>);} return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>); })()}
+                      </button>); })()}
                     <button className="btn-outline px-2 py-1 text-xs" aria-label="Edit" onClick={()=>setEdit(e)}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487l3.651 3.65M4.5 20.25l6.808-1.134a2 2 0 00.99-.54l8.515-8.515a2 2 0 000-2.828l-2.8-2.8a2 2 0 00-2.828 0L6.69 12.948a2 2 0 00-.54.99L5.016 20.25H4.5z"/></svg>
                     </button>

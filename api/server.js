@@ -469,9 +469,9 @@ app.post('/api/files', async (req,res)=>{
     try { localName = `local-${Date.now()}${ext}`; fs.writeFileSync(path.join(DATA_DIR, localName), buf); } catch {}
     const { receiptsFolderId } = await ensureTeamAndFolders();
     const fileId = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
-    const url = await createPublicLink(fileId);
-    const finalUrl = url || (localName? `/files/${localName}`:'');
-    res.json({ id: fileId, url: finalUrl });
+    // Standardize client link to API redirect endpoint
+    const apiUrl = `/api/files/${fileId}`;
+    res.json({ id: fileId, url: apiUrl });
   } catch (e){
     console.error('WorkDrive upload error', e);
     res.status(500).json({ error:'upload failed' });
@@ -502,6 +502,13 @@ app.get('/api/shows/:id/costs', (req,res)=>{
   const validExpenseIds = new Set(memory.expenses.filter(e=>e.cost_id).map(e=>e.cost_id));
   const list = memory.showCosts.filter(c=> c.show_id===req.params.id && (!c.id || validExpenseIds.has(c.id) || !c.id));
   res.json(list);
+});
+
+// Fetch a single cost (for lazy link resolution in clients)
+app.get('/api/costs/:id', (req,res)=>{
+  const c = memory.showCosts.find(x=> x.id===req.params.id);
+  if(!c) return res.status(404).json({ error:'not found' });
+  res.json(c);
 });
 app.post('/api/shows/:id/costs', (req,res)=>{
   const { type, description, amount, file_id, file_url } = req.body||{};
