@@ -835,13 +835,14 @@ app.post('/api/feedback', (req,res)=>{
     try{
       const token = process.env.GITHUB_TOKEN; const repo = process.env.GITHUB_REPO; if(token && repo){
         const title = `Feedback: ${String(note).slice(0,72)}${String(note).length>72?'…':''}`;
+        const base = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
         const body = [
           `Author: ${created_by}`,
           '',
           'Note:',
           String(note),
           '',
-          file_id? `Attachment: /files/${file_id}`:''
+          file_id? `![attachment](${base}/files/${file_id})`:''
         ].join('\n');
         await fetch(`https://api.github.com/repos/${repo}/issues`, { method:'POST', headers:{ 'Authorization': `token ${token}`, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }, body: JSON.stringify({ title, body, labels:['feedback'] }) });
       }

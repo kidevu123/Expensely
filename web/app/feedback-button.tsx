@@ -34,7 +34,7 @@ export default function FeedbackButton(){
           <div className="card max-w-lg w-full shadow-2xl ring-2 ring-indigo-300 bg-white" onClick={(e)=>e.stopPropagation()}>
             <h3 className="font-medium mb-2 text-slate-900">Send feedback</h3>
             <form onSubmit={submit} className="grid gap-3">
-              <textarea className="input h-32 text-slate-900 placeholder:text-slate-400" placeholder="Describe the issue or suggestion" value={note} onChange={e=>setNote(e.target.value)} />
+              <textarea className="input h-32 text-slate-900 placeholder:text-slate-400 bg-white" placeholder="Describe the issue or suggestion" value={note} onChange={e=>setNote(e.target.value)} />
               <div>
                 <label className="text-sm text-slate-600">Attachment (optional)</label>
                 <div>
