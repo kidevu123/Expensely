@@ -563,6 +563,16 @@ app.post('/api/expenses', async (req, res) => {
         const { receiptsFolderId } = await ensureTeamAndFolders();
         file_id = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
         try { const url = await createPublicLink(file_id); if(url) file_url = url; } catch {}
+        // Always store a local copy for reliable inline preview
+        try {
+          const localName = `local-${Date.now()}${ext}`;
+          const p = path.join(DATA_DIR, localName);
+          fs.writeFileSync(p, buf);
+          // Prefer local URL for preview reliability; keep file_id for WD
+          file_url = `/files/${localName}`;
+        } catch (localErr) {
+          console.error('failed to save local mirror', localErr);
+        }
       } catch (zerr) {
         // Robust fallback: persist locally so the receipt is still viewable
         try {
