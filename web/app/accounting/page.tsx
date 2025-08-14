@@ -284,11 +284,14 @@ export default function Accounting(){
                 <button className="btn-primary" onClick={()=>setPreviewUrl(null)}>Close</button>
               </div>
             </div>
-            {(/\.pdf(\?|$)/i.test(String(previewUrl)) ? (
-              <iframe src={previewUrl} title="receipt" className="w-full h-[70vh] rounded-xl bg-slate-50" />
-            ) : (
-              <img src={previewUrl} alt="receipt" className="w-full max-h-[70vh] object-contain rounded-xl bg-slate-50"/>
-            ))}
+            {(() => {
+              const url = String(previewUrl);
+              if (/\.pdf(\?|$)/i.test(url)) {
+                return (<iframe src={url} title="receipt" className="w-full h-[70vh] rounded-xl bg-slate-50" />);
+              }
+              const imgUrl = url.startsWith('/files/') ? `${API}${url}` : url;
+              return (<img src={imgUrl} alt="receipt" className="w-full max-h-[70vh] object-contain rounded-xl bg-slate-50"/>);
+            })()}
           </div>
         </div>
       )}

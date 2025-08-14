@@ -479,11 +479,14 @@ app.post('/api/files', async (req,res)=>{
 // Convenience: redirect WorkDrive file ID to its public link
 app.get('/api/files/:id', async (req,res)=>{
   try {
+    // If a local file exists, stream it directly (no redirect so it works behind the proxy)
+    const localPath = path.join(DATA_DIR, req.params.id);
+    if (fs.existsSync(localPath)) {
+      return res.sendFile(localPath);
+    }
+    // Otherwise try WorkDrive public link
     const url = await createPublicLink(req.params.id);
     if (url) return res.redirect(url);
-    // Fallback: if this looks like a locally stored file, serve it directly
-    const localPath = path.join(DATA_DIR, req.params.id);
-    if (fs.existsSync(localPath)) return res.redirect(`/files/${encodeURIComponent(req.params.id)}`);
     return res.status(404).json({ error:'not found' });
   } catch (e) {
     console.error('files redirect error', e);
