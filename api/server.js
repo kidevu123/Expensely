@@ -474,6 +474,18 @@ app.post('/api/files', async (req,res)=>{
   }
 });
 
+// Convenience: redirect WorkDrive file ID to its public link
+app.get('/api/files/:id', async (req,res)=>{
+  try {
+    const url = await createPublicLink(req.params.id);
+    if (url) return res.redirect(url);
+    return res.status(404).json({ error:'not found' });
+  } catch (e) {
+    console.error('files redirect error', e);
+    return res.status(500).json({ error:'failed' });
+  }
+});
+
 // Show costs
 app.get('/api/shows/:id/costs', (req,res)=>{
   res.json(memory.showCosts.filter(c=>c.show_id===req.params.id));
