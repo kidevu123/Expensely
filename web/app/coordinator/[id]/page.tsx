@@ -23,6 +23,7 @@ export default function ShowDetail({ params }: { params: { id: string } }){
   const [newCost, setNewCost] = useState<{ type: string, description: string, amount: number|string, file?: File|null }>({ type:'', description:'', amount:'', file:null });
   const [hotelOpen, setHotelOpen] = useState<Record<string, boolean>>({});
   const [carOpen, setCarOpen] = useState<Record<string, boolean>>({});
+  const [previewUrl, setPreviewUrl] = useState<string|undefined>(undefined);
   const [busyOCR, setBusyOCR] = useState(false);
 
   async function load(){
@@ -60,6 +61,14 @@ export default function ShowDetail({ params }: { params: { id: string } }){
       const firstLine = (text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean)[0]||'').slice(0,80);
       setNewCost(v=>({ ...v, description: v.description||firstLine||'', amount: v.amount||amt }));
     }finally{ setBusyOCR(false); }
+  }
+
+  // Prefer proxy: if file_id exists, always use API redirect so PDFs/JPGs are served from our origin
+  function resolveReceiptUrl(e:any): string{
+    if (e.file_id) return `${API}/api/files/${e.file_id}`;
+    const direct = e.file_url || '';
+    if (direct.startsWith('/files/')) return `${API}${direct}`;
+    return direct;
   }
 
   return (
@@ -176,7 +185,7 @@ export default function ShowDetail({ params }: { params: { id: string } }){
                       <div className="flex justify-end gap-2">
                         <button className="btn-outline px-2 py-1 text-xs" onClick={()=>{ const details=(document.getElementById(`edit-${e.id}`) as HTMLTableRowElement); if(details) details.classList.toggle('hidden'); }}>✏️</button>
                         {(()=>{ const url = resolveReceiptUrl(e); return url? (
-                          <button className="btn-outline px-2 py-1 text-xs" onClick={()=> window.open(url,'_blank')}>View</button>
+                          <button className="btn-outline px-2 py-1 text-xs" onClick={()=> setPreviewUrl(url)}>View</button>
                         ): (<button className="btn-outline px-2 py-1 text-xs" disabled>View</button>); })()}
                         <button className="btn-danger px-2 py-1 text-xs" onClick={async()=>{ if(!confirm('Delete receipt?')) return; await authFetch(`${API}/api/expenses/${e.id}`, { method:'DELETE' }); await load(); }}>Delete</button>
                       </div>
@@ -207,6 +216,25 @@ export default function ShowDetail({ params }: { params: { id: string } }){
             </table>
           </div>
         </div>
+        {previewUrl && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" onClick={()=>setPreviewUrl(undefined)}>
+            <div className="bg-white rounded-2xl shadow-xl p-3" onClick={e=>e.stopPropagation()}>
+              <div className="flex items-center justify-end gap-2 mb-2">
+                <a className="btn-outline" href={previewUrl} target="_blank" rel="noreferrer">Open in new tab</a>
+                <button className="btn-primary" onClick={()=>setPreviewUrl(undefined)}>Close</button>
+              </div>
+              {(()=>{ const url = String(previewUrl); return (
+                <div className="flex items-center justify-center" style={{ width:'90vw', height:'75vh' }}>
+                  {/\.pdf(\?|$)/i.test(url) ? (
+                    <embed src={url} type="application/pdf" style={{ width:'100%', height:'100%' }} />
+                  ) : (
+                    <img src={url} style={{ maxWidth:'100%', maxHeight:'100%', width:'auto', height:'auto' }} className="rounded-xl bg-slate-50" />
+                  )}
+                </div>
+              ); })()}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
