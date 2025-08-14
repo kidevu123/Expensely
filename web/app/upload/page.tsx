@@ -152,13 +152,10 @@ export default function Upload(){
   }
 
   async function submit(e:any){ e.preventDefault();
-    let file_id: string|undefined;
-    let file_url: string|undefined;
-    // Always upload the file if one was selected, even if OCR hasn't finished populating fileData yet
+    // Build the payload and let the server handle upload + link creation
     let dataToSend = fileData;
     if(!dataToSend && file){ dataToSend = await fileToBase64(file); }
-    if(dataToSend){ const fr=await fetch(`${API}/api/files`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: dataToSend, content_type: file?.type||'image/jpeg' })}); const fj=await fr.json(); file_id=fj.id; file_url=fj.url; }
-    const r = await fetch(`${API}/api/expenses`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ 
+    const payload:any = {
       show_id: mode==='show'? showId: undefined,
       is_daily: mode==='daily',
       merchant: parsed.merchant,
@@ -170,10 +167,10 @@ export default function Upload(){
       total: parsed.total,
       category: parsed.category,
       notes: parsed.notes,
-      file_id,
-      file_url,
-      last4: last4 || undefined
-    }) });
+      last4: last4 || undefined,
+    };
+    if (dataToSend) { payload.file_data = dataToSend; payload.content_type = file?.type||'image/jpeg'; }
+    const r = await fetch(`${API}/api/expenses`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const jr = await r.json().catch(()=>({}));
     if(r.ok){ alert('Saved.'); resetAll(); }
     else { alert(jr.error||'Failed to save expense'); }
@@ -294,7 +291,7 @@ export default function Upload(){
             <textarea className="input" rows={4} placeholder="Optional" value={parsed.notes} onChange={e=>setParsed({...parsed,notes:e.target.value})} />
           </div>
           <div className="flex gap-3 mt-2">
-            <button className="btn-primary" type="submit" disabled={!parsed.total || (mode==='show' && !!selectedShow?.closed)}>Save expense</button>
+            <button className="btn-primary" type="submit" disabled={!file || !parsed.total || (mode==='show' && !!selectedShow?.closed)}>Save expense</button>
             <button type="button" className="btn-primary" onClick={exportJSON}>Export JSON</button>
             <button type="button" className="btn-outline" onClick={resetAll}>Reset</button>
           </div>

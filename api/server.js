@@ -537,7 +537,7 @@ app.delete('/api/shows/:id/costs/:cid', (req,res)=>{
 
 // Expenses
 app.post('/api/expenses', async (req, res) => {
-  const { show_id, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id, is_daily, last4 } = req.body || {};
+  const { show_id, merchant, date, time, subtotal, tax, tip, total, category, notes, file_id: fileIdInput, is_daily, last4, file_data, content_type } = req.body || {};
   let { file_url } = req.body || {};
   if(!is_daily && !show_id) return res.status(400).json({ error:'show_id required unless is_daily' });
   // Block submissions to closed shows at the API layer
@@ -547,7 +547,22 @@ app.post('/api/expenses', async (req, res) => {
       return res.status(403).json({ error: 'submissions closed for this show' });
     }
   }
-  // Fallback: if we received a file_id but no file_url, make a public link now
+  // If file_data is provided, upload to WorkDrive here and create public link
+  let file_id = fileIdInput;
+  try {
+    if (file_data) {
+      const cleaned = String(file_data).replace(/^data:[^,]+,/, '');
+      const buf = Buffer.from(cleaned, 'base64');
+      const ext = (content_type||'').includes('png')? '.png' : (content_type||'').includes('pdf')? '.pdf' : '.jpg';
+      const filename = `receipt-${Date.now()}${ext}`;
+      const { receiptsFolderId } = await ensureTeamAndFolders();
+      file_id = await uploadToWorkDrive({ buffer: buf, filename, contentType: content_type||'application/octet-stream', parentId: receiptsFolderId });
+      try { const url = await createPublicLink(file_id); if(url) file_url = url; } catch {}
+    }
+  } catch (e) {
+    console.error('inline upload failed', e);
+  }
+  // Fallback: we received a file_id but no file_url
   try{
     if(file_id && !file_url){
       const url = await createPublicLink(file_id);
