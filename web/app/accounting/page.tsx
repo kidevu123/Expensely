@@ -31,10 +31,7 @@ export default function Accounting(){
     const direct = e.file_url || '';
     if (direct) {
       if (/^https?:\/\//i.test(direct)) return direct;
-      if (direct.startsWith('/files/')){
-        const id = direct.split('/').pop();
-        return id ? `${API}/api/files/${id}` : '';
-      }
+      if (direct.startsWith('/files/')) return `${API}${direct}`;
     }
     return e.file_id ? `${API}/api/files/${e.file_id}` : '';
   }
@@ -296,7 +293,7 @@ export default function Accounting(){
             </div>
             {(() => {
               const url = String(previewUrl);
-              if (/\.pdf(\?|$)/i.test(url)) {
+              if (/\.pdf(\?|$)/i.test(url) || /\/api\/files\//.test(url)) {
                 return (<iframe src={url} title="receipt" className="w-full h-[70vh] rounded-xl bg-slate-50" />);
               }
               return (<img src={url} alt="receipt" className="w-full max-h-[70vh] object-contain rounded-xl bg-slate-50"/>);

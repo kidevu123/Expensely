@@ -618,7 +618,14 @@ app.post('/api/expenses', async (req, res) => {
 });
 app.get('/api/expenses', (req, res) => {
   const { show_id, daily, orphaned } = req.query;
-  let list = memory.expenses;
+  let list = memory.expenses.map(e=>{
+    // Attach missing file_id/file_url from mirrored show cost if present
+    if(e.cost_id && (!e.file_id || !e.file_url)){
+      const c = memory.showCosts.find(x=> x.id===e.cost_id);
+      if(c){ if(!e.file_id && c.file_id) e.file_id = c.file_id; if(!e.file_url && c.file_url) e.file_url = c.file_url; }
+    }
+    return e;
+  });
   if(String(orphaned)==='1'){
     const valid = new Set(memory.shows.map(s=>s.id));
     list = list.filter(x=> x.show_id && !valid.has(x.show_id));

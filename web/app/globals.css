@@ -30,7 +30,7 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Sego
 .lane-title { @apply flex items-center justify-between; }
 
 /* Polished file input, reusable */
-.file-input { @apply block w-full text-sm text-slate-700 border border-slate-300 rounded-xl cursor-pointer bg-white;
+.file-input { @apply block w-full text-sm text-slate-700 border border-slate-300 rounded-xl cursor-pointer bg-white h-10;
   @apply px-3 py-2;
 }
 .file-input { @apply file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100; }
