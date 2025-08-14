@@ -1,6 +1,13 @@
 "use client";
 import { useEffect, useState } from 'react';
-const API = process.env.NEXT_PUBLIC_API_BASE_URL as string;
+
+function getApiBase(): string {
+	const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string) || '';
+	if (fromEnv && /^https?:\/\//.test(fromEnv)) return fromEnv.replace(/\/$/, '');
+	if (typeof window !== 'undefined') return window.location.origin.replace(/\/$/, '');
+	return '';
+}
+const API = getApiBase();
 import { getUser, authFetch } from '../../lib/auth';
 
 export default function Accounting(){
