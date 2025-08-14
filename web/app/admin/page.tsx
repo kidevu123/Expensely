@@ -214,9 +214,8 @@ export default function Admin(){
                   </td>
                   <td className="py-1">
                     <div className="flex gap-2">
-                      <button className="btn-outline px-3 py-1 text-xs" onClick={()=>setEditor({ user: u, phone: u.phone_e164||'', permissions: u.permissions||[], daily: !!u.allow_daily_expenses, password: '' })} type="button">Edit</button>
-                      <button className="btn-outline px-3 py-1 text-xs" onClick={async()=>{ const pick=await new Promise<string|undefined>((resolve)=>{ const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.onchange=async()=>{ const f=i.files?.[0]; if(!f) return resolve(undefined); const r=new FileReader(); r.onload=()=>resolve(String(r.result)); r.readAsDataURL(f); }; i.click(); }); if(!pick) return; await fetch(`${API}/api/users/${u.id}/avatar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: pick, content_type: 'image/jpeg' }) }); await load(); }} type="button">Avatar</button>
-                      <button className="btn-danger px-3 py-1 text-xs" onClick={()=>delUser(u.id)} type="button">Delete</button>
+                      <button className="btn-outline px-3 py-1 text-xs" title="Edit" onClick={()=>setEditor({ user: u, phone: u.phone_e164||'', permissions: u.permissions||[], daily: !!u.allow_daily_expenses, password: '' })} type="button">✏️</button>
+                      <button className="btn-danger px-3 py-1 text-xs" title="Delete" onClick={()=>delUser(u.id)} type="button">✖️</button>
                     </div>
                   </td>
                 </tr>
@@ -232,6 +231,10 @@ export default function Admin(){
             <h4 className="font-medium mb-2">Edit user</h4>
             <div className="grid gap-2">
               <input className="input" placeholder="Phone" value={editor.phone} onChange={e=>setEditor({ ...editor, phone: e.target.value }) as any} />
+              <div>
+                <div className="text-sm text-slate-600 mb-1">Avatar</div>
+                <button className="btn-outline" onClick={async()=>{ const pick=await new Promise<string|undefined>((resolve)=>{ const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.onchange=async()=>{ const f=i.files?.[0]; if(!f) return resolve(undefined); const r=new FileReader(); r.onload=()=>resolve(String(r.result)); r.readAsDataURL(f); }; i.click(); }); if(!pick||!editor?.user) return; await fetch(`${API}/api/users/${editor.user.id}/avatar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: pick, content_type: 'image/jpeg' }) }); await load(); }}>Upload new</button>
+              </div>
               <div className="flex flex-wrap gap-3 text-sm">
                 {['admin','coordinator','accountant'].map(p=> (
                   <label key={p} className="flex items-center gap-2"><input type="checkbox" checked={editor.permissions.includes(p)} onChange={e=>{

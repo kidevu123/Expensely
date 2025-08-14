@@ -622,7 +622,19 @@ app.get('/api/expenses', (req, res) => {
   res.json(list);
 });
 app.delete('/api/expenses/:id', (req,res)=>{
-  memory.expenses = memory.expenses.filter(e=>e.id!==req.params.id);
+  const idx = memory.expenses.findIndex(e=>e.id===req.params.id);
+  if(idx===-1) return res.status(404).json({ error:'not found' });
+  const e = memory.expenses[idx];
+  memory.expenses.splice(idx,1);
+  // If this expense mirrors a coordinator show cost, delete the source cost too
+  if (e && e.cost_id){
+    const before = memory.showCosts.length;
+    memory.showCosts = memory.showCosts.filter(c=> c.id !== e.cost_id);
+    if (memory.showCosts.length !== before){
+      saveTo(COSTS_PATH, memory.showCosts);
+      audit(req,'delete','show_cost',e.cost_id,{ via:'expense_delete' });
+    }
+  }
   saveTo(EXPENSES_PATH, memory.expenses);
   res.json({ ok:true });
 });
