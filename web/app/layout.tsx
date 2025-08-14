@@ -8,8 +8,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }){
   const shaEnv = process.env.NEXT_PUBLIC_GIT_SHA || '';
   const semver = (rawVersion||'').replace(/^v/,'');
   const isSemver = /^(\d+\.\d+\.\d+)/.test(semver);
-  const version = isSemver ? `v${semver}` : (rawVersion ? rawVersion : 'edge');
-  const sha = (shaEnv || (isSemver? '': rawVersion)).slice(0,7);
+  const sha = (shaEnv || (isSemver ? '' : rawVersion)).slice(0,7);
+  const version = isSemver ? `v${semver}` : 'edge';
   return (
     <html lang="en"><body>
       <header className="brand-header shadow sticky top-0 z-10">
