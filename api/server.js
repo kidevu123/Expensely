@@ -572,7 +572,7 @@ app.delete('/api/expenses/:id', (req,res)=>{
 });
 app.patch('/api/expenses/:id', (req,res)=>{
   const e = memory.expenses.find(x=>x.id===req.params.id); if(!e) return res.status(404).json({error:'not found'});
-  const { merchant, date, time, subtotal, tax, tip, total, category, notes, status, org_label, pushed } = req.body||{};
+  const { merchant, date, time, subtotal, tax, tip, total, category, notes, status, org_label, pushed, file_id, file_url } = req.body||{};
   if(merchant!==undefined) e.merchant=merchant;
   if(date!==undefined) e.date=date;
   if(time!==undefined) e.time=time;
@@ -585,6 +585,8 @@ app.patch('/api/expenses/:id', (req,res)=>{
   if(status!==undefined) e.status=status;
   if(org_label!==undefined) e.org_label=org_label;
   if(pushed!==undefined) e.pushed = pushed;
+  if(file_id!==undefined) e.file_id = file_id;
+  if(file_url!==undefined) e.file_url = file_url;
   saveTo(EXPENSES_PATH, memory.expenses); audit(req,'update','expense',e.id,{ status, org_label, pushed }); res.json(e);
 });
 
