@@ -38,6 +38,11 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Sego
 .upload-icon { @apply inline-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 cursor-pointer; }
 .upload-icon svg { width: 18px; height: 18px; }
 
+/* Upload dropzone */
+.dropzone { @apply relative flex items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-white h-64 w-full overflow-hidden; }
+.dropzone .placeholder { @apply text-slate-400 text-sm; }
+.dropzone .overlay { @apply absolute bottom-3 right-3; }
+
 /* Optional helper to hide filename text and show only the button */
 .file-only { @apply text-transparent w-auto inline-block; }
 

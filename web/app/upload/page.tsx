@@ -99,6 +99,7 @@ export default function Upload(){
   const [showId, setShowId] = useState<string>('');
   const [file, setFile] = useState<File|null>(null);
   const [fileData, setFileData] = useState<string>('');
+  const [fileType, setFileType] = useState<string>('');
   const [mode, setMode] = useState<'daily'|'show'>('show');
   const [ocrText, setOcrText] = useState('');
   const [parsed, setParsed] = useState<any>({ merchant:'', date:'', time:'', subtotal:'', tax:'', tip:'', total:'', category:'Uncategorized', notes:'' });
@@ -115,7 +116,7 @@ export default function Upload(){
 
   async function runOCR(f:File){
     setBusy(true); setOcrText('');
-    setFileData(await fileToBase64(f));
+    const b64 = await fileToBase64(f); setFileData(b64); setFileType(f.type||'');
     const { data } = await Tesseract.recognize(f, 'eng');
     const text = data.text || '';
     setOcrText(text);
@@ -218,7 +219,7 @@ export default function Upload(){
            <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 flex items-center justify-center overflow-hidden min-h-[260px] md:min-h-[380px]"
              onDragOver={e=>e.preventDefault()}
              onDrop={e=>{ e.preventDefault(); const f=e.dataTransfer.files?.[0]; if(!f) return; setFile(f); runOCR(f); }}>
-             {!fileData ? (
+              {!fileData ? (
                <button type="button" className="flex flex-col items-center gap-3 text-slate-600" disabled={mode==='show' && !!selectedShow?.closed} onClick={()=>{ (document.getElementById('upload-file') as HTMLInputElement)?.click(); }}>
                  <div className="upload-icon">
                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2"/></svg>
@@ -226,7 +227,11 @@ export default function Upload(){
                  <div className="text-sm">Tap to upload or drag a receipt (JPG/PDF)</div>
                </button>
              ) : (
-               <img alt="receipt preview" src={fileData} className="max-w-[80vw] max-h-[60vh] w-auto h-auto object-contain bg-slate-100 rounded-xl" />
+                (fileType.includes('pdf') ? (
+                  <iframe title="receipt-preview" src={fileData} className="w-full h-[60vh] rounded-xl bg-slate-50" />
+                ) : (
+                  <img alt="receipt preview" src={fileData} className="max-w-[80vw] max-h-[60vh] w-auto h-auto object-contain bg-slate-100 rounded-xl" />
+                ))
              )}
              <input id="upload-file" className="file-input" type="file" accept="image/*,application/pdf" disabled={mode==='show' && !!selectedShow?.closed} onChange={e=>{ const f=(e.target as HTMLInputElement).files?.[0]||null; setFile(f); if(f) runOCR(f); }} />
            </div>
