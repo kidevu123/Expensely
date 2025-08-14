@@ -136,7 +136,12 @@ export default function ShowDetail({ params }: { params: { id: string } }){
             <input className="input" placeholder="Type (e.g., Booth, Electrical, Utilities)" value={newCost.type} onChange={e=>setNewCost(v=>({ ...v, type: e.target.value }))} />
             <input className="input md:col-span-2" placeholder="Description" value={newCost.description} onChange={e=>setNewCost(v=>({ ...v, description: e.target.value }))} />
             <input className="input" placeholder="Amount" type="number" value={newCost.amount} onChange={e=>setNewCost(v=>({ ...v, amount: e.target.value }))} />
-            <input className="file-input file-only" type="file" accept="image/*,application/pdf" onChange={async e=> { const f=e.target.files?.[0]||null; setNewCost(v=>({ ...v, file: f })); if(f) await runCostOCR(f); }} />
+            <div>
+              <input id="cost-file" className="file-input" type="file" accept="image/*,application/pdf" onChange={async e=> { const f=(e.target as HTMLInputElement).files?.[0]||null; setNewCost(v=>({ ...v, file: f })); if(f) await runCostOCR(f); }} />
+              <button type="button" className="upload-icon" onClick={()=>{ (document.getElementById('cost-file') as HTMLInputElement).click(); }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2"/></svg>
+              </button>
+            </div>
             <button className="btn-primary" onClick={async()=>{
               if(!newCost.type || !newCost.amount) return alert('Type and amount required');
               let file_id: string|undefined = undefined;

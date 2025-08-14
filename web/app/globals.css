@@ -30,10 +30,9 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Sego
 .lane-title { @apply flex items-center justify-between; }
 
 /* Polished file input, reusable */
-.file-input { @apply block w-full text-sm text-slate-700 border border-slate-300 rounded-xl cursor-pointer bg-white h-10;
-  @apply px-3 py-2;
-}
-.file-input { @apply file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100; }
+.file-input { @apply block w-full text-sm text-slate-700 border border-slate-300 rounded-xl cursor-pointer bg-white h-10 px-3 py-2 hidden; }
+.upload-icon { @apply inline-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 cursor-pointer; }
+.upload-icon svg { width: 18px; height: 18px; }
 
 /* Optional helper to hide filename text and show only the button */
 .file-only { @apply text-transparent w-auto inline-block; }
