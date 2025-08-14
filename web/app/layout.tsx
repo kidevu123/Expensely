@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }){
       <header className="brand-header shadow sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <a href="/" className="font-semibold text-white">Expensely</a>
+            <a href="/" className="font-semibold text-white text-lg tracking-wide">Expensely</a>
             <nav className="hidden md:flex items-center gap-4 text-white/90 text-sm">
               <a href="/admin" className="hover:underline">Admin</a>
               <a href="/coordinator" className="hover:underline">Coordinator</a>
