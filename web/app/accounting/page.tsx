@@ -152,7 +152,7 @@ export default function Accounting(){
                     </td>
                      <td className="text-right">
                        <div className="flex justify-end gap-2 whitespace-nowrap">
-                         {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
+                        {(()=>{ const url = e.file_url || (e.file_id? `${API}/api/files/${e.file_id}`:''); return (
                            <a className={`btn-outline px-2 py-1 text-xs ${url? '':'opacity-50 cursor-not-allowed'}`} href={url||'#'} target={url? '_blank': undefined} rel={url? 'noreferrer': undefined} aria-disabled={!url} onClick={(ev)=>{ if(!url){ ev.preventDefault(); } }}>
                              View
                            </a>
