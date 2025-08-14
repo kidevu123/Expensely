@@ -9,12 +9,13 @@ export default function UserNav(){
   // heartbeat for active sessions analytics
   useEffect(()=>{
     if(!u) return;
-    const API = process.env.NEXT_PUBLIC_API_BASE_URL as string;
+    const getApiBase = ()=>{ const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string)||''; if(fromEnv && /^https?:\/\//.test(fromEnv)) return fromEnv.replace(/\/$/,''); if(typeof window!== 'undefined') return window.location.origin.replace(/\/$/,''); return ''; };
+    const API = getApiBase();
     const id = setInterval(()=>{ authFetch(`${API}/api/analytics/heartbeat`, { method:'POST' }); }, 30000);
     return ()=> clearInterval(id);
   },[u]);
   // refresh user from server (to get persisted avatar updates)
-  useEffect(()=>{ (async()=>{ if(!u) return; try{ const API = process.env.NEXT_PUBLIC_API_BASE_URL as string; const r=await authFetch(`${API}/api/users/me`); if(r.ok){ const j=await r.json(); setU(j as any); setUser(j as any); } else if(r.status===401){ clearUser(); location.href='/login'; } }catch{} })(); },[mounted]);
+  useEffect(()=>{ (async()=>{ if(!u) return; try{ const getApiBase = ()=>{ const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string)||''; if(fromEnv && /^https?:\/\//.test(fromEnv)) return fromEnv.replace(/\/$/,''); if(typeof window!== 'undefined') return window.location.origin.replace(/\/$/,''); return ''; }; const API = getApiBase(); const r=await authFetch(`${API}/api/users/me`); if(r.ok){ const j=await r.json(); setU(j as any); setUser(j as any); } else if(r.status===401){ clearUser(); location.href='/login'; } }catch{} })(); },[mounted]);
   if(!mounted) return <div className="w-40 h-6"/>;
   if(!u) return (<div className="flex items-center gap-3 text-sm"><a className="text-white hover:underline" href="/login">Sign in</a></div>);
   return (
