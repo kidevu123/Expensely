@@ -102,7 +102,7 @@ export default function ShowDetail({ params }: { params: { id: string } }){
             <input className="input" placeholder="Type (e.g., Booth, Electrical, Utilities)" value={newCost.type} onChange={e=>setNewCost(v=>({ ...v, type: e.target.value }))} />
             <input className="input md:col-span-2" placeholder="Description" value={newCost.description} onChange={e=>setNewCost(v=>({ ...v, description: e.target.value }))} />
             <input className="input" placeholder="Amount" type="number" value={newCost.amount} onChange={e=>setNewCost(v=>({ ...v, amount: e.target.value }))} />
-            <input className="input file-only" type="file" accept="image/*,application/pdf" onChange={e=> setNewCost(v=>({ ...v, file: e.target.files?.[0]||null }))} />
+            <input className="file-input" type="file" accept="image/*,application/pdf" onChange={e=> setNewCost(v=>({ ...v, file: e.target.files?.[0]||null }))} />
             <button className="btn-primary" onClick={async()=>{
               if(!newCost.type || !newCost.amount) return alert('Type and amount required');
               let file_id: string|undefined = undefined;
