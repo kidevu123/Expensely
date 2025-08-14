@@ -184,7 +184,7 @@ export default function Upload(){
     a.href = URL.createObjectURL(blob); a.download = `expense-${Date.now()}.json`; a.click();
   }
 
-  function resetAll(){ setParsed({ merchant:'', date:'', time:'', subtotal:'', tax:'', tip:'', total:'', category:'Uncategorized', notes:'' }); setOcrText(''); setFile(null); }
+  function resetAll(){ setParsed({ merchant:'', date:'', time:'', subtotal:'', tax:'', tip:'', total:'', category:'Uncategorized', notes:'' }); setOcrText(''); setFile(null); setFileData(''); setFileType(''); }
   function fileToBase64(f:File){ return new Promise<string>((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(String(r.result)); r.onerror=reject; r.readAsDataURL(f); }); }
 
   if(!mounted) return null;

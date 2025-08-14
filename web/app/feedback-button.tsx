@@ -2,12 +2,19 @@
 import { useState } from 'react';
 import { authFetch } from '../lib/auth';
 
+function getApiBase(): string {
+  const fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL as string) || '';
+  if (fromEnv && /^https?:\/\//.test(fromEnv)) return fromEnv.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return window.location.origin.replace(/\/$/, '');
+  return '';
+}
+
 export default function FeedbackButton(){
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
   const [fileData, setFileData] = useState<string>('');
   const [busy, setBusy] = useState(false);
-  const API = process.env.NEXT_PUBLIC_API_BASE_URL as string;
+  const API = getApiBase();
 
   async function submit(e:any){
     e.preventDefault(); if(!note.trim()) return alert('Please enter a note'); setBusy(true);
@@ -27,7 +34,7 @@ export default function FeedbackButton(){
           <div className="card max-w-lg w-full shadow-2xl ring-2 ring-indigo-300 bg-white" onClick={(e)=>e.stopPropagation()}>
             <h3 className="font-medium mb-2 text-slate-900">Send feedback</h3>
             <form onSubmit={submit} className="grid gap-3">
-              <textarea className="input h-32" placeholder="Describe the issue or suggestion" value={note} onChange={e=>setNote(e.target.value)} />
+              <textarea className="input h-32 text-slate-900 placeholder:text-slate-400" placeholder="Describe the issue or suggestion" value={note} onChange={e=>setNote(e.target.value)} />
               <div>
                 <label className="text-sm text-slate-600">Attachment (optional)</label>
                 <div>
