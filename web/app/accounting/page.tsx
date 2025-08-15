@@ -217,7 +217,7 @@ export default function Accounting(){
                   <table className="w-full text-sm">
                      <thead className="text-slate-500"><tr><th className="text-left py-2 w-8"></th><th className="text-left py-2">Merchant</th><th className="text-left">Amount</th><th className="text-left">Category</th><th className="text-left">Card</th><th className="text-left">Uploader</th><th className="text-left">Type</th><th className="text-right w-[220px]">Actions</th></tr></thead>
                     <tbody>
-                      {expenses.filter(e=>e.status==='assigned' && e.org_label===o.label).map(e=> (
+                      {uniqueById(expenses).filter(e=> e && e.status==='assigned' && e.org_label===o.label).map(e=> (
                         <tr key={e.id} className="border-t">
                           <td className="py-2"><input type="checkbox" checked={!!selected[e.id]} onChange={()=>setSelected(s=>({ ...s, [e.id]: !s[e.id] }))} /></td>
                           <td className="py-2">{e.merchant}</td>
