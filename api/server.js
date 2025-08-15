@@ -712,7 +712,9 @@ app.post('/api/expenses/:id/assign', (req,res)=>{
   const { org_label } = req.body||{};
   e.org_label = org_label || null;
   e.status = org_label? 'assigned': 'unassigned';
-  saveTo(EXPENSES_PATH, memory.expenses); res.json(e);
+  saveTo(EXPENSES_PATH, memory.expenses);
+  // return the updated object as a safeguard – never delete in assignment path
+  return res.json(e);
 });
 
 // Push selected expenses (stub for Zoho integration)

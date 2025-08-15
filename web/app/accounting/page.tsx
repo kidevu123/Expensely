@@ -151,8 +151,17 @@ export default function Accounting(){
               <button className="btn-primary" onClick={async()=>{
                 const selectEl = document.getElementById('assignOrg') as HTMLSelectElement; const label = selectEl?.value; if(!label) return;
                 const ids = Object.entries(selected).filter(([id,checked])=> checked && allExpenses.find(e=>e.id===id)?.status==='unassigned').map(([id])=>id);
-                await Promise.all(ids.map(id=> fetch(`${API}/api/expenses/${id}/assign`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ org_label: label }) })));
-                const e=await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json(); const d=await (await fetch(`${API}/api/expenses?daily=1`)).json(); setExpenses([...e,...d]); const all=await (await fetch(`${API}/api/expenses`)).json(); setAllExpenses(all);
+                // optimistic UI off – do network first and then fully refresh source and destination lists
+                const res = await Promise.all(ids.map(id=> fetch(`${API}/api/expenses/${id}/assign`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ org_label: label }) })));
+                // hard refresh: fetch all expenses to avoid any client-side state drift
+                const allAfter = await (await fetch(`${API}/api/expenses`)).json();
+                setAllExpenses(allAfter);
+                // rebuild the current view: union of show and daily, deduped
+                const e = await (await fetch(`${API}/api/expenses?show_id=${showId}`)).json();
+                const d = await (await fetch(`${API}/api/expenses?daily=1`)).json();
+                setExpenses(uniqueById([...(e||[]), ...(d||[])]));
+                // clear selection
+                setSelected({});
               }} type="button">Assign selected</button>
             </div>
           </div>
