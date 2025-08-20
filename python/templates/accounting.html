@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Accounting · Expensely{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Accounting</h1>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+	<div class="bg-white rounded-xl shadow p-4">
+		<h2 class="font-semibold mb-2">Unassigned</h2>
+		<ul class="space-y-2">
+			{% for e in unassigned %}
+			<li class="border rounded p-2 text-sm">
+				<div class="flex justify-between">
+					<span>{{ e.description|default:'(no description)' }}</span>
+					<span>${{ e.amount_cents|floatformat:-2 }}</span>
+				</div>
+				<div class="text-slate-500">last4: {{ e.last4|default:'—' }}</div>
+				<div class="mt-1"><a class="text-red-600 underline text-xs" href="/accounting/unassign/{{ e.id }}">Unassign (noop)</a></div>
+			</li>
+			{% empty %}
+			<li class="text-slate-500">None</li>
+			{% endfor %}
+		</ul>
+	</div>
+	{% for c in companies %}
+	<div class="bg-white rounded-xl shadow p-4">
+		<h2 class="font-semibold mb-2">{{ c.label }}</h2>
+		<ul class="space-y-2">
+			{% for e in by_company[c.id] %}
+			<li class="border rounded p-2 text-sm">
+				<div class="flex justify-between">
+					<span>{{ e.description|default:'(no description)' }}</span>
+					<span>${{ e.amount_cents|floatformat:-2 }}</span>
+				</div>
+				<div class="text-slate-500">last4: {{ e.last4|default:'—' }}</div>
+				<div class="mt-1"><a class="text-red-600 underline text-xs" href="/accounting/unassign/{{ e.id }}">Unassign</a></div>
+			</li>
+			{% empty %}
+			<li class="text-slate-500">No expenses</li>
+			{% endfor %}
+		</ul>
+	</div>
+	{% endfor %}
+</div>
+{% endblock %}

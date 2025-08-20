@@ -1,132 +1,66 @@
-<!doctype html>
-<html>
-<head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>Upload Expense</title>
-	<style>
-		body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 1rem; background: #f8fafc; }
-		.form { max-width: 840px; margin: 0 auto; padding: 1rem 1.25rem; border-radius: 12px; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-		label { display:block; margin-top: 12px; font-weight:600; }
-		input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #d1d5db; }
-		button { margin-top: 16px; padding: 10px 14px; border-radius: 10px; border: 0; color: white; background: linear-gradient(120deg,#5b8cff,#8a5bff); cursor: pointer; }
-		.error { color: #b91c1c; margin-top: 6px; }
-		.ok { color: #065f46; margin-top: 6px; }
-		.preview { margin-top: 12px; display:flex; justify-content:center; align-items:center; background:#f3f4f6; border:1px dashed #cbd5e1; border-radius:12px; min-height: 240px; }
-		.preview img, .preview iframe { max-width: 90%; max-height: 60vh; object-fit: contain; border-radius: 10px; background:white; }
-		.hint { font-size: 12px; color:#64748b; }
-	</style>
-	<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-</head>
-<body>
-	<div class="form">
-		<h2>Upload Expense</h2>
-		{% if request.GET.ok %}
-			<p class="ok">Saved. ID = {{ request.GET.id }}</p>
-		{% endif %}
-		{% if errors %}
-			<div class="error">{{ errors }}</div>
-		{% endif %}
-		<form id="upload-form" method="post" enctype="multipart/form-data">
-			{% csrf_token %}
-			<label>Type</label>
-			{{ form.type }}
-			<label>Show (required for Show type)</label>
-			{{ form.show }}
-			<label>Description</label>
-			{{ form.description }}
-			<label>Amount</label>
-			{{ form.amount }}
-			<label>Category</label>
-			{{ form.category }}
-			<label>Card last 4 <span class="hint">auto-filled from OCR if found</span></label>
-			{{ form.last4 }}
-			<label>Receipt (image/PDF)</label>
-			{{ form.receipt }}
-			<div class="preview" id="preview"></div>
-			<button type="submit">Save expense</button>
-		</form>
-		<p style="margin-top:10px"><a href="/">Home</a></p>
-	</div>
-	<script>
-	(function(){
-		const input = document.querySelector('input[name="receipt"]');
-		const last4El = document.querySelector('input[name="last4"]');
-		const amountEl = document.querySelector('input[name="amount"]');
-		const descEl = document.querySelector('input[name="description"]');
-		const preview = document.getElementById('preview');
-
-		function setPreview(file){
-			preview.innerHTML = '';
-			if(!file) return;
-			const url = URL.createObjectURL(file);
-			if(file.type.startsWith('image/')){
-				const img = document.createElement('img');
-				img.src = url;
-				preview.appendChild(img);
-			}else if(file.type === 'application/pdf'){
-				const iframe = document.createElement('iframe');
-				iframe.src = url;
-				preview.appendChild(iframe);
-			}else{
-				preview.textContent = 'Preview not available for this file type.';
-			}
-		}
-
-		function extractLast4(text){
-			// Look for 4 consecutive digits likely to be card tail; prioritize patterns near 'card' or 'xxxx'
-			const patterns = [
-				/(?:card|acct|account|visa|mc|master|amex|discover)[^\d]{0,10}(\d{4})/i,
-				/\*{2,}\s*(\d{4})/i,
-				/ending(?: in)?\s*(\d{4})/i,
-				/(?:xxxx|x{4,})\s*(\d{4})/i,
-				/(\d{4})\b(?![\d-])/ // fallback
-			];
-			for(const re of patterns){
-				const m = text.match(re);
-				if(m && m[1]) return m[1];
-			}
-			return '';
-		}
-
-		function extractAmount(text){
-			// Take the last currency-like number as total
-			const re = /(\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})|\$?\s*\d+\.\d{2})/g;
-			let match, last = '';
-			while((match = re.exec(text)) !== null){ last = match[1]; }
-			return last.replace(/[^0-9.]/g,'');
-		}
-
-		async function runOCR(file){
-			if(!file || !file.type.startsWith('image/')) return; // OCR images only for now
-			try{
-				const { data } = await Tesseract.recognize(file, 'eng', { logger: ()=>{} });
-				const text = (data && data.text) ? data.text : '';
-				if(text){
-					if(descEl && !descEl.value){
-						const firstLine = text.split(/\n+/).map(s=>s.trim()).filter(Boolean)[0] || '';
-						descEl.value = firstLine.slice(0, 120);
-					}
-					if(last4El && !last4El.value){
-						const l4 = extractLast4(text);
-						if(l4) last4El.value = l4;
-					}
-					if(amountEl && !amountEl.value){
-						const amt = extractAmount(text);
-						if(amt) amountEl.value = amt;
-					}
-				}
-			}catch(err){
-				console.warn('OCR failed', err);
-			}
-		}
-
-		input.addEventListener('change', async (e)=>{
-			const f = e.target.files && e.target.files[0];
-			setPreview(f);
-			await runOCR(f);
-		});
-	})();
-	</script>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block title %}Upload · Expensely{% endblock %}
+{% block content %}
+<div class="form">
+	<h2>Upload Expense</h2>
+	{% if request.GET.ok %}
+		<p class="ok">Saved. ID = {{ request.GET.id }}</p>
+	{% endif %}
+	{% if errors %}
+		<div class="error">{{ errors }}</div>
+	{% endif %}
+	<form id="upload-form" method="post" enctype="multipart/form-data">
+		{% csrf_token %}
+		<label>Type</label>
+		{{ form.type }}
+		<label>Show (required for Show type)</label>
+		{{ form.show }}
+		<label>Description</label>
+		{{ form.description }}
+		<label>Amount</label>
+		{{ form.amount }}
+		<label>Category</label>
+		{{ form.category }}
+		<label>Card last 4 <span class="hint">auto-filled from OCR if found</span></label>
+		{{ form.last4 }}
+		<label>Receipt (image/PDF)</label>
+		{{ form.receipt }}
+		<div class="preview" id="preview"></div>
+		<button type="submit">Save expense</button>
+	</form>
+	<p style="margin-top:10px"><a href="/">Home</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+(function(){
+	const input = document.querySelector('input[name="receipt"]');
+	const last4El = document.querySelector('input[name="last4"]');
+	const amountEl = document.querySelector('input[name="amount"]');
+	const descEl = document.querySelector('input[name="description"]');
+	const preview = document.getElementById('preview');
+	function setPreview(file){
+		preview.innerHTML = '';
+		if(!file) return;
+		const url = URL.createObjectURL(file);
+		if(file.type.startsWith('image/')){
+			const img = document.createElement('img');
+			img.src = url; img.style.maxWidth='90%'; img.style.maxHeight='60vh'; img.style.objectFit='contain';
+			preview.appendChild(img);
+		}else if(file.type === 'application/pdf'){
+			const iframe = document.createElement('iframe'); iframe.src = url; iframe.style.width='90%'; iframe.style.height='60vh';
+			preview.appendChild(iframe);
+		}else{ preview.textContent = 'Preview not available.'; }
+	}
+	function extractLast4(text){
+		const patterns = [/(?:card|acct|account|visa|mc|master|amex|discover)[^\d]{0,10}(\d{4})/i,/\*{2,}\s*(\d{4})/i,/ending(?: in)?\s*(\d{4})/i,/(?:xxxx|x{4,})\s*(\d{4})/i,/(\d{4})\b(?![\d-])/];
+		for(const re of patterns){ const m = text.match(re); if(m && m[1]) return m[1]; }
+		return '';
+	}
+	function extractAmount(text){
+		const re = /(\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})|\$?\s*\d+\.\d{2})/g; let match,last=''; while((match=re.exec(text))!==null){ last=match[1]; } return last.replace(/[^0-9.]/g,'');
+	}
+	async function runOCR(file){ if(!file||!file.type.startsWith('image/')) return; try{ const {data}=await Tesseract.recognize(file,'eng'); const text=(data&&data.text)||''; if(text){ if(!descEl.value){ const first=text.split(/\n+/).map(s=>s.trim()).filter(Boolean)[0]||''; descEl.value=first.slice(0,120);} if(!last4El.value){ const l4=extractLast4(text); if(l4) last4El.value=l4;} if(!amountEl.value){ const amt=extractAmount(text); if(amt) amountEl.value=amt; } } }catch(e){ console.warn('OCR failed',e); } }
+	input.addEventListener('change', async (e)=>{ const f=e.target.files&&e.target.files[0]; setPreview(f); await runOCR(f); });
+})();
+</script>
+{% endblock %}
