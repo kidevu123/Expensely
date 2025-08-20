@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Upload Expense</title>
+	<style>
+		body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 1rem; }
+		.form { max-width: 720px; margin: 0 auto; padding: 1rem 1.25rem; border-radius: 12px; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+		label { display:block; margin-top: 12px; font-weight:600; }
+		input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #d1d5db; }
+		button { margin-top: 16px; padding: 10px 14px; border-radius: 10px; border: 0; color: white; background: linear-gradient(120deg,#5b8cff,#8a5bff); cursor: pointer; }
+		.error { color: #b91c1c; margin-top: 6px; }
+		.ok { color: #065f46; margin-top: 6px; }
+	</style>
+</head>
+<body>
+	<div class="form">
+		<h2>Upload Expense</h2>
+		{% if request.GET.ok %}
+			<p class="ok">Saved. ID = {{ request.GET.id }}</p>
+		{% endif %}
+		{% if errors %}
+			<div class="error">{{ errors }}</div>
+		{% endif %}
+		<form method="post" enctype="multipart/form-data">
+			{% csrf_token %}
+			<label>Type</label>
+			{{ form.type }}
+			<label>Show (required for Show type)</label>
+			{{ form.show }}
+			<label>Description</label>
+			{{ form.description }}
+			<label>Amount</label>
+			{{ form.amount }}
+			<label>Category</label>
+			{{ form.category }}
+			<label>Card last 4</label>
+			{{ form.last4 }}
+			<label>Receipt (image/PDF)</label>
+			{{ form.receipt }}
+			<button type="submit">Save expense</button>
+		</form>
+		<p style="margin-top:10px"><a href="/">Home</a></p>
+	</div>
+</body>
+</html>

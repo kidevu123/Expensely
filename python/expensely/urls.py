@@ -4,6 +4,7 @@ from django.urls import path
 import os
 
 from .views import home
+from core.views import upload
 
 
 def health(_request):
@@ -12,6 +13,7 @@ def health(_request):
 
 urlpatterns = [
 	path("", home, name="home"),
+	path("upload", upload, name="upload"),
 	path("admin/", admin.site.urls),
 	path("api/health", health),
 ]
