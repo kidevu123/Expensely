@@ -2,6 +2,19 @@
 
 A lightweight trade-show expense management app.
 
+## Quick start
+
+```bash
+# Install dependencies and build
+cd web && npm ci && npm run build
+cd ../api && npm ci
+
+# Run with Docker
+docker compose up -d --build
+```
+
+Web on http://localhost:3000, API on http://localhost:4000/health.
+
 ## Features
 - Admin: users/RBAC, audit, orphaned receipts, feedback tickets
 - Coordinator: shows, participants (flight/hotel/car), show expenses
@@ -9,14 +22,39 @@ A lightweight trade-show expense management app.
 - Upload: OCR assist for last4, daily vs show, image preview
 
 ## Stack
-Next.js + Tailwind (web), Express (api), JSON on disk in /data, Docker Compose.
+Next.js 14 + TypeScript + Tailwind (web), Express (api), JSON on disk in /data, Docker Compose.
 
-## Quick start
+## Build & Development
 
-Web on http://localhost, API on http://localhost:4000/health.
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
 
-## Deploy
-Use the provided docker-compose.yml. Set NEXT_PUBLIC_API_BASE_URL for web.
+### Local Development
+```bash
+# Install dependencies
+cd web && npm ci
+cd ../api && npm ci
+
+# Type checking  
+cd web && npx tsc --noEmit
+
+# Build web app
+cd web && npm run build
+
+# Start development
+cd web && npm run dev  # http://localhost:3000
+cd api && npm start    # http://localhost:4000
+```
+
+### Production Deploy
+```bash
+# Build and start all services
+docker compose up -d --build
+
+# Health check
+curl http://localhost:4000/api/health
+```
 
 ## Data schema
 Rendered schema (GitHub Mermaid) and PNG fallback.

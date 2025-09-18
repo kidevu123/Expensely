@@ -1,7 +1,7 @@
 "use client";
 
 export type Role = 'admin'|'coordinator'|'accountant'|'attendee';
-export type User = { id:string; email?:string; username?:string; name:string; role: Role };
+export type User = { id:string; email?:string; username?:string; name:string; role: Role; avatar_url?:string };
 
 const KEY = 'expensely:user';
 
