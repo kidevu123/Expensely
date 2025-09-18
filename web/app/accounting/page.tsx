@@ -38,13 +38,13 @@ export default function Accounting(){
     return e.file_id? `${API}/api/files/${e.file_id}` : '';
   }
 
-  function exportCsvForOrg(orgLabel:string){
+  async function exportCsvForOrg(orgLabel:string){
     // Export everything visible in this lane (both show-tagged and daily assigned to this org)
     const items = expenses.filter(e=> e.org_label===orgLabel);
     const header = ['merchant','date','time','subtotal','tax','tip','total','last4','uploader','notes','type','receipt_url'];
     const lines = [header.join(',')];
-    items.forEach(e=>{
-      const url = resolveReceiptUrl(e);
+    for(const e of items){
+      const url = await resolveReceiptUrl(e);
       const row = [
         JSON.stringify(e.merchant||''),
         JSON.stringify(e.date||''),
@@ -57,7 +57,7 @@ export default function Accounting(){
         JSON.stringify(url)
       ];
       lines.push(row.join(','));
-    });
+    }
     const blob = new Blob([lines.join('\n')], { type:'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = `${orgLabel}-expenses.csv`; a.click();
@@ -228,11 +228,11 @@ export default function Accounting(){
                           <td>{(() => { const sh = shows.find((s:any)=>s.id===e.show_id); if(!sh) return (<span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">Daily</span>); const col=colorForShow(sh.id||sh.name||''); return (<span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: hexToRgba(col,0.15), color: col }}>{sh.name}</span>); })()}</td>
                            <td className="text-right">
                               <div className="flex justify-end gap-2 whitespace-nowrap">
-                                {(()=>{ const url = resolveReceiptUrl(e); if(url){ return (
-                                  <button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={()=>setPreviewUrl(url)}>
+                                {(()=>{ return (
+                                  <button className="btn-outline px-2 py-1 text-xs" aria-label="View" onClick={async()=>{ const url = await resolveReceiptUrl(e); if(url) setPreviewUrl(url); }}>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                   </button>
-                                ); } return (<button className="btn-outline px-2 py-1 text-xs opacity-50 cursor-not-allowed" disabled title="No receipt linked">View</button>); })()}
+                                ); })()}
                                 <button className="btn-outline px-2 py-1 text-xs" aria-label="Edit" onClick={()=>setEdit(e)}>
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487l3.651 3.65M4.5 20.25l6.808-1.134a2 2 0 00.99-.54l8.515-8.515a2 2 0 000-2.828l-2.8-2.8a2 2 0 00-2.828 0L6.69 12.948a2 2 0 00-.54.99L5.016 20.25H4.5z"/></svg>
                                 </button>

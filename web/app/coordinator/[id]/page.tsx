@@ -43,11 +43,11 @@ export default function ShowDetail({ params }: { params: { id: string } }){
   if(!mounted) return null;
   if(!show) return (<main className="p-6 max-w-5xl mx-auto"><h2 className="text-2xl font-medium mb-4">Show</h2><p>Not found.</p></main>);
 
-  function resolveReceiptUrl(e:any){
+  function resolveReceiptUrl(e:any): string{
     if (e.file_id) return `${API}/api/files/${e.file_id}`;
     const direct = e.file_url || '';
-    if(direct){ if(/^https?:\/\//i.test(direct)) return direct; if(direct.startsWith('/files/')){ const id = direct.split('/').pop(); return id? `${API}/api/files/${id}`: ''; } }
-    return '';
+    if(direct){ if(/^https?:\/\//i.test(direct)) return direct; if(direct.startsWith('/files/')){ return `${API}${direct}`; } }
+    return direct;
   }
 
   async function runCostOCR(file: File){
@@ -61,14 +61,6 @@ export default function ShowDetail({ params }: { params: { id: string } }){
       const firstLine = (text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean)[0]||'').slice(0,80);
       setNewCost(v=>({ ...v, description: v.description||firstLine||'', amount: v.amount||amt }));
     }finally{ setBusyOCR(false); }
-  }
-
-  // Prefer proxy: if file_id exists, always use API redirect so PDFs/JPGs are served from our origin
-  function resolveReceiptUrl(e:any): string{
-    if (e.file_id) return `${API}/api/files/${e.file_id}`;
-    const direct = e.file_url || '';
-    if (direct.startsWith('/files/')) return `${API}${direct}`;
-    return direct;
   }
 
   return (
