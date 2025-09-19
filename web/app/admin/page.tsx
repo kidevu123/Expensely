@@ -55,7 +55,10 @@ export default function Admin(){
 
   return (
     <main className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-medium mb-4">Admin — Users & RBAC</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-medium">Admin — Users & RBAC</h2>
+        <a href="/admin/settings" className="btn-outline">⚙️ API Settings</a>
+      </div>
       {metrics && (
         <div className="grid md:grid-cols-4 gap-3 mb-4">
           <div className="card"><div className="text-sm text-slate-500">Users</div><div className="text-2xl font-semibold">{metrics.totals.users}</div></div>
