@@ -899,5 +899,121 @@ app.post('/api/shows/:id/whatsapp/invite', async (req,res)=>{
   res.json({ ok:true, sent, failed });
 });
 
+// Admin settings management
+app.get('/api/admin/settings', (req, res) => {
+  const actor = actorFrom(req);
+  const user = memory.users.find(u => u.email === actor || u.username === actor);
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  // Return current configuration status (without exposing secrets)
+  const settings = {
+    zoho_workdrive: {
+      configured: !!(ZOHO.clientId && ZOHO.clientSecret && ZOHO.refreshToken),
+      dc: ZOHO.dc,
+      team_id: !!ZOHO.teamId
+    },
+    database: {
+      configured: !!process.env.DATABASE_URL,
+      url_preview: process.env.DATABASE_URL ? 
+        process.env.DATABASE_URL.replace(/\/\/[^@]+@/, '//***:***@') : null
+    },
+    smtp: {
+      configured: !!(process.env.SMTP_HOST && process.env.SMTP_USER),
+      host: process.env.SMTP_HOST || null
+    },
+    whatsapp: {
+      configured: !!(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_ID)
+    },
+    github: {
+      configured: !!(process.env.GITHUB_TOKEN && process.env.GITHUB_REPO)
+    }
+  };
+
+  res.json(settings);
+});
+
+app.post('/api/admin/settings/zoho', async (req, res) => {
+  const actor = actorFrom(req);
+  const user = memory.users.find(u => u.email === actor || u.username === actor);
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  const { client_id, client_secret, refresh_token, dc, team_id } = req.body || {};
+  
+  try {
+    // Update ZOHO config
+    if (client_id) ZOHO.clientId = client_id;
+    if (client_secret) ZOHO.clientSecret = client_secret;  
+    if (refresh_token) ZOHO.refreshToken = refresh_token;
+    if (dc) ZOHO.dc = dc.toLowerCase();
+    if (team_id) ZOHO.teamId = team_id;
+
+    // Test the configuration
+    let status = 'invalid';
+    let error = null;
+    
+    if (ZOHO.clientId && ZOHO.clientSecret && ZOHO.refreshToken) {
+      try {
+        const token = await getZohoAccessToken();
+        if (token) {
+          status = 'valid';
+          // Try to ensure folders to fully validate
+          await ensureTeamAndFolders();
+        }
+      } catch (e) {
+        error = e.message;
+      }
+    } else {
+      error = 'Missing required fields';
+    }
+
+    audit(req, 'update', 'settings', 'zoho', { status, dc: ZOHO.dc });
+    res.json({ ok: true, status, error });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/api/admin/settings/test-zoho', async (req, res) => {
+  const actor = actorFrom(req);
+  const user = memory.users.find(u => u.email === actor || u.username === actor);
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  try {
+    if (!ZOHO.clientId || !ZOHO.clientSecret || !ZOHO.refreshToken) {
+      return res.json({ status: 'error', message: 'Zoho credentials not configured' });
+    }
+
+    const token = await getZohoAccessToken();
+    const { workdrive } = zohoDomains(ZOHO.dc);
+    
+    // Test API access
+    const response = await fetch(`${workdrive}/api/v1/teams`, {
+      headers: { Authorization: `Zoho-oauthtoken ${token}` }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      res.json({ 
+        status: 'success', 
+        message: `Connected to Zoho WorkDrive (${ZOHO.dc})`,
+        teams: data.data?.length || 0
+      });
+    } else {
+      res.json({ 
+        status: 'error', 
+        message: `API Error: ${response.status} ${response.statusText}` 
+      });
+    }
+  } catch (e) {
+    res.json({ status: 'error', message: e.message });
+  }
+});
+
 app.listen(4000, () => console.log('API on :4000'));
 
